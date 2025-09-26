@@ -1,0 +1,52 @@
+{
+  "hero": {
+    "welcome": "Welcome to Smart Farming",
+    "description": "Grow smarter with AI-powered insights for your crops.",
+    "farmers": "50,000+ Farmers",
+    "award": "Award Winning"
+  },
+  "overview": {
+    "title": "Today's Farm Overview",
+    "subtitle": "Here's your personalized dashboard with real-time insights and recommendations."
+  },
+  "summaryCards": {
+    "activeCrops": "Active Crops",
+    "marketValue": "Market Value",
+    "weatherScore": "Weather Score",
+    "growthRate": "Growth Rate"
+  },
+  "recentActivities": {
+    "title": "Recent Farm Activities",
+    "viewAll": "View All",
+    "activity1": {
+      "title": "Wheat crop harvested successfully",
+      "details": "2 hours ago • 15 acres • 2.5 tons yield",
+      "status": "Completed"
+    },
+    "activity2": {
+      "title": "New market price alert for tomatoes",
+      "details": "5 hours ago • Price increased by 12%",
+      "status": "Price Alert"
+    },
+    "activity3": {
+      "title": "Weather forecast updated",
+      "details": "1 day ago • Rain expected in 3 days",
+      "status": "Weather"
+    }
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "cropRecommendations": {
+      "title": "Get Crop Recommendations",
+      "description": "Find the best crops for your soil and climate"
+    },
+    "marketPrices": {
+      "title": "Check Market Prices",
+      "description": "Stay updated with latest crop prices"
+    },
+    "weatherForecast": {
+      "title": "Weather Forecast",
+      "description": "Plan your farming activities with weather insights"
+    }
+  }
+}
