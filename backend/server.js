@@ -21,7 +21,8 @@ import {
 import Feedback from './routes/feedbackRoute.js';
 import croproute from "./routes/croproute.js"
 import adminRoutes from "./routes/adminRoutes.js";
-import notificationroute from "./routes/notificationroutes.js"
+import notificationroute from "./routes/notificationroutes.js";
+import notificationallroute from './routes/notificationall.js';
 
 
 
@@ -58,16 +59,13 @@ app.use("/api/marketprices", marketRoutes);
 app.use("/api", questionroutes);
 app.use(middleware.handle(i18next));
 app.use("/api", soilRoutes);
-app.use("/api", translationRoutes);
+app.use("/api", translationRoutes);     
 app.use("/api",Feedback);
 app.use('/api/crops',croproute);
 app.use("/api/admin", adminRoutes);
 app.use("/api/notifications", notificationroute);
+app.use("/api/notificationsall",  notificationallroute);
 //feedback
-
-
-
-
 
 app.get("/",(req,res)=>{
     res.send("working")

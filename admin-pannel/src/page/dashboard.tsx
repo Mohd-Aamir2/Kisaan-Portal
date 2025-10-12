@@ -6,10 +6,11 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import NotificationModal from '../components/NotificationModel';
 
 interface Notification {
-  id: string;
+  _id: string;              // backend sends "_id"
+  title: string;
   message: string;
-  timestamp: Date;
-  status: 'sent' | 'pending';
+  createdAt: string;        // use createdAt from Mongo
+  status: 'sent' | 'pending'; // optional if backend doesn’t send it
 }
 
 interface Feedback {
@@ -22,6 +23,14 @@ interface Feedback {
   createdAt: string;
   updatedAt: string;
 }
+export interface NotificationFormData {
+  title: string;
+  message: string;
+  targetType: "all" | "state" | "district";
+  state?: string;
+  district?: string;
+}
+
 
 const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +54,7 @@ const Dashboard: React.FC = () => {
         setFeedbackCount(feedbackRes.data.length);
 
         // Fetch notifications (if you have a notifications endpoint)
-        const notificationsRes = await axios.get('http://localhost:4000/api/notifications/all');
+        const notificationsRes = await axios.get('http://localhost:4000/api/notificationsall/all');
         setNotifications(notificationsRes.data.notifications);
         setNotificationsSent(notificationsRes.data.notifications.length);
 
@@ -58,17 +67,6 @@ const Dashboard: React.FC = () => {
 
     fetchData();
   }, []);
-
-  const handleSendNotification = (message: string) => {
-    const newNotification: Notification = {
-      id: Date.now().toString(),
-      message,
-      timestamp: new Date(),
-      status: 'sent',
-    };
-    setNotifications(prev => [newNotification, ...prev]);
-    setNotificationsSent(prev => prev + 1);
-  };
 
   const formatDate = (date: string | Date) => {
     const parsed = new Date(date);
@@ -131,22 +129,37 @@ const Dashboard: React.FC = () => {
           <div className="p-6">
             <div className="space-y-4">
               {notifications.slice(0, 3).map(notification => (
-                <div key={notification.id} className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="flex-shrink-0 p-2 bg-blue-100 rounded-full">
-                    <Bell className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 mb-1">{notification.message}</p>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <Clock className="w-3 h-3" />
-                      {formatDate(notification.timestamp)}
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {notification.status}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
+  <div
+    key={notification._id}
+    className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+  >
+    <div className="flex-shrink-0 p-2 bg-blue-100 rounded-full">
+      <Bell className="w-4 h-4 text-blue-600" />
+    </div>
+    <div className="flex-1 min-w-0">
+      {/* 🔹 Title */}
+      <p className="text-sm font-semibold text-gray-900 mb-1">
+        {notification.title}
+      </p>
+
+      {/* 🔹 Message */}
+      <p className="text-sm text-gray-700 mb-2">
+        {notification.message}
+      </p>
+
+      <div className="flex items-center gap-2 text-xs text-gray-500">
+        <Clock className="w-3 h-3" />
+        {formatDate(notification.createdAt)}
+        {notification.status && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            {notification.status}
+          </span>
+        )}
+      </div>
+    </div>
+  </div>
+))}
+
             </div>
           </div>
         </section>

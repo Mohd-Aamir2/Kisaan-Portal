@@ -15,7 +15,7 @@ export const sendNotification = async (req, res) => {
     if (req.io) {
       req.io.emit("new-notification", notification);
     }
-
+    
     res.status(201).json({ message: "Notification sent", notification });
   } catch (err) {
     res.status(500).json({ message: err.message });
