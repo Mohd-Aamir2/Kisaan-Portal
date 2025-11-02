@@ -1,52 +1,77 @@
-import Link from 'next/link';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Logo } from '@/components/logo';
-import { CheckCircle2, Lightbulb, Bell, BarChart2 } from 'lucide-react';
-import { Copyright } from '@/components/copyright';
-import { LanguageSelector } from '@/components/language-selector';
-import { FloatingChatbot } from '@/components/chatbot/floating-chatbot';
+"use client";
+
+import Link from "next/link";
+import Image from "next/image";
+import { useContext } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Logo } from "@/components/logo";
+import { CheckCircle2, Lightbulb, Bell, BarChart2 } from "lucide-react";
+import { Copyright } from "@/components/copyright";
+import { LanguageSelector } from "@/components/language-selector";
+import { FloatingChatbot } from "@/components/chatbot/floating-chatbot";
+import { AppContext } from "./context/appcontext"; // ✅ Import your context
 
 export default function Home() {
+  const context = useContext(AppContext);
+
   const features = [
     {
       icon: <Lightbulb className="h-8 w-8 text-primary" />,
-      title: 'AI Recommendations',
-      description: 'Get personalized crop suggestions based on your farm\'s data and local conditions.',
+      title: "AI Recommendations",
+      description:
+        "Get personalized crop suggestions based on your farm's data and local conditions.",
     },
     {
       icon: <Bell className="h-8 w-8 text-primary" />,
-      title: 'Real-time Alerts',
-      description: 'Receive timely notifications for weather changes, pest threats, and farming tasks.',
+      title: "Real-time Alerts",
+      description:
+        "Receive timely notifications for weather changes, pest threats, and farming tasks.",
     },
     {
       icon: <BarChart2 className="h-8 w-8 text-primary" />,
-      title: 'Data-driven Insights',
-      description: 'Analyze soil health, weather patterns, and historical data to make informed decisions.',
+      title: "Data-driven Insights",
+      description:
+        "Analyze soil health, weather patterns, and historical data to make informed decisions.",
     },
     {
       icon: <CheckCircle2 className="h-8 w-8 text-primary" />,
-      title: 'Feedback Loop',
-      description: 'Help improve our AI by providing feedback on your crop outcomes.',
+      title: "Feedback Loop",
+      description:
+        "Help improve our AI by providing feedback on your crop outcomes.",
     },
   ];
 
+  const isLoggedIn = context?.token; // ✅ check if user is logged in (token exists)
+
   return (
     <div className="flex flex-col min-h-screen">
-      <header className=" mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center fixed top-0 w-full bg-grey/80 backdrop-blur-md z-50 border-b">
+      {/* ✅ HEADER */}
+      <header className="mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center fixed top-0 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md z-50 border-b">
         <Logo />
         <nav className="flex items-center gap-2">
           <LanguageSelector />
-          <Button variant="ghost" asChild>
-            <Link href="/login">Login</Link>
-          </Button>
-          <Button asChild>
-            <Link href="/register">Register</Link>
-          </Button>
+
+          {isLoggedIn ? (
+            // ✅ Show Dashboard button when logged in
+            <Button asChild>
+              <Link href="/dashboard">Go to Dashboard</Link>
+            </Button>
+          ) : (
+            // ❌ Show Login/Register when not logged in
+            <>
+              <Button variant="ghost" asChild>
+                <Link href="/login">Login</Link>
+              </Button>
+              <Button asChild>
+                <Link href="/register">Register</Link>
+              </Button>
+            </>
+          )}
         </nav>
       </header>
 
+      {/* ✅ MAIN SECTION */}
       <main className="flex-grow">
         <section className="relative py-20 md:py-32">
           <div
@@ -56,13 +81,16 @@ export default function Home() {
             <div className="blur-[106px] h-56 bg-gradient-to-br from-primary to-green-300 dark:from-blue-700"></div>
             <div className="blur-[106px] h-32 bg-gradient-to-r from-cyan-400 to-sky-300 dark:to-indigo-600"></div>
           </div>
+
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative">
             <div className="max-w-3xl mx-auto text-center">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold font-headline tracking-tight text-gray-900 dark:text-white gradient-title">
                 AI-Powered Smart Crop Advisory for Modern Farmers
               </h1>
               <p className="mt-6 text-lg text-gray-600 dark:text-gray-300">
-                Kisaan leverages artificial intelligence to provide you with actionable insights, helping you increase yield, reduce risk, and grow smarter.
+                Kisaan leverages artificial intelligence to provide you with
+                actionable insights, helping you increase yield, reduce risk,
+                and grow smarter.
               </p>
               <div className="mt-10 flex justify-center gap-4">
                 <Button size="lg" asChild>
@@ -73,36 +101,42 @@ export default function Home() {
                 </Button>
               </div>
             </div>
+
             <div className="mt-16 relative">
               <Image
                 src="https://media.istockphoto.com/id/806276128/photo/farmer-ploughing-rice-field-at-sunrise.jpg?s=612x612&w=0&k=20&c=t5IUOH9GWrI1lAz4gXPJnwjR9WUxQxdmSnIJxk_XDiQ="
-                alt="Farmer ploughing a rice field with two cattle at sunrise."
-                data-ai-hint="farmer ploughing"
+                alt="Farmer ploughing a rice field at sunrise"
                 width={1400}
                 height={600}
                 className="rounded-xl shadow-2xl mx-auto object-cover h-[600px]"
               />
               <div className="absolute inset-0 bg-black/30 rounded-xl flex items-end p-8 text-white">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg">
-                        <p className="font-bold">Primary Livelihood</p>
-                        <p className="text-sm">Over 55% of India’s population depends on agriculture.</p>
-                    </div>
-                    <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg">
-                        <p className="font-bold">GDP Contribution</p>
-                        <p className="text-sm">Around 17–20% of India’s GDP comes from agriculture and allied sectors.</p>
-                    </div>
-                    <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg">
-                        <p className="font-bold">Global Rank</p>
-                        <p className="text-sm">India is second worldwide in farm output and first in net cropped area.</p>
-                    </div>
+                  <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg">
+                    <p className="font-bold">Primary Livelihood</p>
+                    <p className="text-sm">
+                      Over 55% of India’s population depends on agriculture.
+                    </p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg">
+                    <p className="font-bold">GDP Contribution</p>
+                    <p className="text-sm">
+                      Around 17–20% of India’s GDP comes from agriculture.
+                    </p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm p-4 rounded-lg">
+                    <p className="font-bold">Global Rank</p>
+                    <p className="text-sm">
+                      India is second worldwide in farm output.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="py-20 md:py-28">
+          <section className="py-20 md:py-28">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                     <div className="text-center md:text-left">
@@ -128,11 +162,16 @@ export default function Home() {
             </div>
         </section>
 
+        {/* ✅ Features Section */}
         <section id="features" className="py-20 md:py-28 bg-secondary">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
-              <h2 className="text-3xl md:text-4xl font-bold font-headline">Features to Help You Thrive</h2>
-              <p className="mt-4 text-lg text-gray-600">Everything you need for a successful harvest.</p>
+              <h2 className="text-3xl md:text-4xl font-bold font-headline">
+                Features to Help You Thrive
+              </h2>
+              <p className="mt-4 text-lg text-gray-600">
+                Everything you need for a successful harvest.
+              </p>
             </div>
             <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
               {features.map((feature) => (
@@ -144,7 +183,9 @@ export default function Home() {
                     <CardTitle className="mt-4">{feature.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-muted-foreground">{feature.description}</p>
+                    <p className="text-muted-foreground">
+                      {feature.description}
+                    </p>
                   </CardContent>
                 </Card>
               ))}
@@ -153,12 +194,14 @@ export default function Home() {
         </section>
       </main>
 
+      {/* ✅ Footer */}
       <footer className="border-t">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row justify-between items-center">
           <Logo />
           <Copyright />
         </div>
-      </footer> 
+      </footer>
+
       <FloatingChatbot />
     </div>
   );

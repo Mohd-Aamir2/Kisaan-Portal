@@ -1,34 +1,31 @@
+// File: 'use server' file (Example: frontend/src/app/actions.ts)
+
 "use server";
 
-import { chat, type ChatOutput } from "@/ai/flows/chatbot";
+import { chat } from "@/ai/flows/chatbot";
 import { textToSpeech } from "@/ai/flows/tts";
 
-export type ChatResponse = {
-  text: string;
-  audio?: string;
-};
+export async function sendMessage(message: string, history: any[]) {
+    try {
+        const chatResponse = await chat({ message, history });
+        if (!chatResponse.response) {
+            return { text: "I'm sorry, I couldn't generate a response." };
+        }
 
-export async function sendMessage(message: string, history: any[]): Promise<ChatResponse> {
-  try {
-    const input = { message, history };
-    const chatResponse = await chat(input);
-    
-    if (!chatResponse.response) {
-       return { text: "I'm sorry, I couldn't generate a response." };
+        // ✅ Wait for TTS to finish (so audio is ready to return)
+        const ttsResponse = await textToSpeech({
+            text: chatResponse.response,
+            // ⚠️ CHANGES HERE: 'alloy' (Google TTS default) को 
+            // 'Algenib' (ElevenLabs default/fallback) से बदलें
+            voice: chatResponse.voice ?? "Algenib", 
+        });
+
+        return {
+            text: chatResponse.response,
+            audio: ttsResponse?.audio ?? null, // send audio back as base64 string
+        };
+    } catch (error) {
+        console.error("Error:", error);
+        return { text: "I'm sorry, an error occurred. Please try again." };
     }
-
-    const ttsResponse = await textToSpeech({ text: chatResponse.response, voice: chatResponse.voice });
-
-    return {
-      text: chatResponse.response,
-      audio: ttsResponse.audio,
-    };
-  } catch (error) {
-    console.error("Error sending message to chatbot:", error);
-    // In case of an error, we still want to return a text response
-    // so the user knows something went wrong.
-    return {
-      text: "I'm sorry, an error occurred. Please try again.",
-    };
-  }
 }

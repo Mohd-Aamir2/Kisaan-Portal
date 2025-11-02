@@ -4,7 +4,7 @@ import { ai } from "@/ai/genkit";
 export async function POST(req: Request) {
   try {
     const { message } = await req.json();
-    const finalPrompt = `You are Kisaan, an AI farming assistant. User says: ${message}`;
+    const finalPrompt = `You are ai Kaka, an AI farming assistant. User says: ${message}`;
 
     // Oldest Genkit streaming
     const stream = await ai.generateStream(finalPrompt);

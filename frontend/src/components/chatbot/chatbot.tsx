@@ -1,3 +1,5 @@
+// File: Chatbot.tsx
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -5,8 +7,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
-import { sendMessage } from "@/app/actions/chatbot";
+// ⚠️ सुनिश्चित करें कि यह पाथ आपके Server Action फ़ंक्शन तक सही जाता है
+import { sendMessage } from "@/app/actions/chatbot"; 
 
+// --- UI Imports ---
 import {
   Card,
   CardContent,
@@ -27,6 +31,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, Bot, User, Loader2, Volume2, Mic, MicOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+// ------------------
 
 const chatSchema = z.object({
   message: z.string().min(1, "Message cannot be empty."),
@@ -37,6 +42,7 @@ type Message = {
   text: string;
   sender: "user" | "bot";
   audio?: string;
+  isSpeaking?: boolean; // 👈 TTS Playback Status
 };
 
 // Add this interface to handle vendor prefixes for SpeechRecognition
@@ -55,18 +61,83 @@ export function Chatbot() {
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
 
+  const form = useForm<z.infer<typeof chatSchema>>({
+    resolver: zodResolver(chatSchema),
+    defaultValues: {
+      message: "",
+    },
+  });
+
+  // --- TTS and Speaking Logic ---
+
+  // TTS playback और isSpeaking status को मैनेज करने का मुख्य फ़ंक्शन
+  const playBotAudio = (audioData: string, messageId: string) => {
+    if (!audioData || !audioRef.current) return;
+
+    // isSpeaking को True करें
+    setMessages((prev) =>
+      prev.map((m) => (m.id === messageId ? { ...m, isSpeaking: true } : m))
+    );
+
+    audioRef.current.src = audioData;
+
+    // जब ऑडियो खत्म हो जाए
+    audioRef.current.onended = () => {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, isSpeaking: false } : m))
+      );
+    };
+
+    // जब ऑडियो प्ले न हो पाए
+    audioRef.current.onerror = () => {
+      console.error("Audio playback error.");
+      setMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, isSpeaking: false } : m))
+      );
+    };
+
+    // Auto-play शुरू करें
+    audioRef.current.play().catch((e) => {
+      console.error("Auto-play failed:", e);
+      // अगर auto-play fail हो जाए तो isSpeaking बंद कर दें
+      setMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, isSpeaking: false } : m))
+      );
+    });
+  };
+
+  // TTS Replay बटन पर क्लिक होने पर
+  const handleReplayAudio = (message: Message) => {
+    if (message.audio) {
+        // अगर पहले से कोई ऑडियो चल रहा है तो उसे बंद कर दें
+        audioRef.current?.pause();
+        // नया ऑडियो प्ले करें
+        playBotAudio(message.audio, message.id);
+    }
+  };
+
+
+  // --- Hooks and Initial Setup ---
+
   useEffect(() => {
+    // Initial message
     setMessages([
-      { id: "1", text: "Hello! How can I help you today?", sender: "bot" },
+      {
+        id: "1",
+        text: "नमस्ते! मैं आपका AI किसान सहायक हूँ। मैं हिंदी, तमिल, तेलुगु और अंग्रेजी में मदद कर सकता हूँ।",
+        sender: "bot",
+      },
     ]);
 
+    // Speech Recognition Setup (जैसा आपने दिया था)
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = "en-US";
+      // Note: हिंदी और अन्य भाषाओं के लिए आपको `lang` को बदलना होगा
+      recognitionRef.current.lang = "hi-IN"; // उदाहरण के लिए हिंदी
 
       recognitionRef.current.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
@@ -93,13 +164,7 @@ export function Chatbot() {
     }
   }, [toast]);
 
-  const form = useForm<z.infer<typeof chatSchema>>({
-    resolver: zodResolver(chatSchema),
-    defaultValues: {
-      message: "",
-    },
-  });
-
+  // Scroll to bottom on new message
   useEffect(() => {
     if (scrollAreaRef.current) {
       const viewport = scrollAreaRef.current.querySelector(
@@ -111,19 +176,7 @@ export function Chatbot() {
     }
   }, [messages]);
 
-  useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-    if (
-      lastMessage?.sender === "bot" &&
-      lastMessage.audio &&
-      audioRef.current
-    ) {
-      audioRef.current.src = lastMessage.audio;
-      audioRef.current
-        .play()
-        .catch((e) => console.error("Audio playback failed:", e));
-    }
-  }, [messages]);
+  // --- Main Submit Function ---
 
   async function onSubmit(values: z.infer<typeof chatSchema>) {
     const userMessage: Message = {
@@ -138,23 +191,46 @@ export function Chatbot() {
 
     try {
       const history = messages.map((m) => ({
-        role: m.sender === "bot" ? "model" : "user",
+        // Genkit history format
+        role: m.sender === "bot" ? "assistant" : "user", // 👈 IMPORTANT: 'model' की जगह 'assistant' उपयोग करें
         content: m.text,
       }));
 
+      // 🚀 Server Action को कॉल करें
       const botResponse = await sendMessage(values.message, history);
 
+      if (!botResponse.text) {
+          throw new Error("Received empty response from server.");
+      }
+
+      const botMessageId = (Date.now() + 1).toString();
       const botMessage: Message = {
-        id: (Date.now() + 1).toString(),
+        id: botMessageId,
         text: botResponse.text,
         sender: "bot",
         audio: botResponse.audio,
+        isSpeaking: true, // Audio तुरंत चलने वाला है
       };
+      
+      // मैसेज को UI में जोड़ें
       setMessages((prev) => [...prev, botMessage]);
+
+      // 🔊 ऑडियो प्ले करें
+      if (botResponse.audio) {
+          // Playback शुरू करने से पहले थोड़ा इंतज़ार करें ताकि DOM में नया मैसेज आ जाए
+          setTimeout(() => {
+              playBotAudio(botResponse.audio!, botMessageId);
+          }, 50); 
+      } else {
+           // अगर ऑडियो नहीं मिला तो isSpeaking को तुरंत बंद कर दें
+           setMessages((prev) => prev.map(m => m.id === botMessageId ? { ...m, isSpeaking: false } : m));
+      }
+
     } catch (error) {
+      console.error("Chat submission error:", error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "Sorry, I'm having trouble connecting. Please try again later.",
+        text: "क्षमा करें, सर्वर से कनेक्ट करने में समस्या हुई। कृपया पुनः प्रयास करें।",
         sender: "bot",
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -163,15 +239,7 @@ export function Chatbot() {
     }
   }
 
-  const playAudio = (audioData: string) => {
-    if (audioRef.current) {
-      audioRef.current.src = audioData;
-      audioRef.current
-        .play()
-        .catch((e) => console.error("Audio playback failed:", e));
-    }
-  };
-
+  // Voice Search Handler (जैसा आपने दिया था)
   const handleVoiceSearch = () => {
     if (!recognitionRef.current) {
       toast({
@@ -186,6 +254,8 @@ export function Chatbot() {
       recognitionRef.current.stop();
       setIsListening(false);
     } else {
+      // अगर कोई ऑडियो चल रहा है तो उसे रोक दें
+      audioRef.current?.pause();
       recognitionRef.current.start();
       setIsListening(true);
     }
@@ -196,7 +266,7 @@ export function Chatbot() {
       <Card className="flex-1 flex flex-col h-full shadow-none border-0 rounded-b-none">
         <CardHeader className="rounded-t-xl bg-muted/50">
           <CardTitle className="flex items-center gap-2">
-            <Bot /> AI Assistant
+            <Bot /> Kisaan AI Assistant
           </CardTitle>
           <CardDescription>Your smart farming assistant.</CardDescription>
         </CardHeader>
@@ -223,16 +293,19 @@ export function Chatbot() {
                       "rounded-lg px-4 py-2 max-w-[80%] whitespace-pre-wrap flex items-center gap-2",
                       message.sender === "user"
                         ? "bg-primary text-primary-foreground"
-                        : "bg-secondary"
+                        : "bg-secondary",
+                      message.isSpeaking ? "border-2 border-yellow-400 shadow-lg" : "" // 👈 Speaking Highlight
                     )}
                   >
                     <p className="text-sm">{message.text}</p>
+                    {/* TTS Replay Button */}
                     {message.sender === "bot" && message.audio && (
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6"
-                        onClick={() => playAudio(message.audio!)}
+                        onClick={() => handleReplayAudio(message)}
+                        disabled={message.isSpeaking} // जब बोल रहा हो तो डिसेबल
                       >
                         <Volume2 className="h-4 w-4" />
                       </Button>
@@ -254,8 +327,9 @@ export function Chatbot() {
                       <Bot />
                     </AvatarFallback>
                   </Avatar>
-                  <div className="rounded-lg px-4 py-2 bg-muted">
+                  <div className="rounded-lg px-4 py-2 bg-secondary flex items-center gap-2">
                     <Loader2 className="w-5 h-5 animate-spin" />
+                    <p className="text-sm">सोच रहा हूँ...</p>
                   </div>
                 </div>
               )}
@@ -277,8 +351,8 @@ export function Chatbot() {
                           <Input
                             placeholder={
                               isListening
-                                ? "Listening..."
-                                : "Type or say something..."
+                                ? "सुन रहा हूँ..."
+                                : "कुछ टाइप करें या बोलें..."
                             }
                             {...field}
                             disabled={isLoading}
@@ -308,13 +382,14 @@ export function Chatbot() {
                 />
                 <Button type="submit" disabled={isLoading} size="icon">
                   <Send className="h-4 w-4" />
-                  <span className="sr-only">Send</span>
+                  <span className="sr-only">भेजें</span>
                 </Button>
               </form>
             </Form>
           </div>
         </CardContent>
       </Card>
+      {/* Audio Element: पूरे ऐप में सिर्फ़ एक audio element का उपयोग करें */}
       <audio ref={audioRef} className="hidden" />
     </div>
   );

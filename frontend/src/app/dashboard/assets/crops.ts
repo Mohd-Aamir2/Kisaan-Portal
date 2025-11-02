@@ -20,7 +20,7 @@ const crops: Crop[] = [
   {
     "id": 1,
     "name": "Tomatoes",
-    "image": "https://picsum.photos/seed/tomatoes/400/300",
+    "image": "/images/Gemini_Generated_Image_njbdmnnjbdmnnjbd.png",
     "difficulty": "Medium",
     "duration": "90-120 days",
     "steps": [
@@ -69,7 +69,7 @@ const crops: Crop[] = [
   {
     "id": 2,
     "name": "Wheat",
-    "image": "https://picsum.photos/seed/wheat/400/300",
+    "image": "/images/Gemini_Generated_Image_qersefqersefqers.png",
     "difficulty": "Hard",
     "duration": "120-150 days",
     "steps": [
@@ -118,7 +118,7 @@ const crops: Crop[] = [
   {
     "id": 3,
     "name": "Rice",
-    "image": "https://picsum.photos/seed/rice/400/300",
+    "image": "/images/Gemini_Generated_Image_crtxu7crtxu7crtx.png",
     "difficulty": "Easy",
     "duration": "6-12 months",
     "steps": [
@@ -167,7 +167,7 @@ const crops: Crop[] = [
   {
     "id": 4,
     "name": "Maize",
-    "image": "https://picsum.photos/seed/maize/400/300",
+    "image": "/images/Gemini_Generated_Image_vqlzh4vqlzh4vqlz.png",
     "difficulty": "Medium",
     "duration": "60-90 days",
     "steps": [
@@ -216,7 +216,7 @@ const crops: Crop[] = [
   {
     "id": 5,
     "name": "Barley",
-    "image": "https://picsum.photos/seed/barley/400/300",
+    "image": "/images/Gemini_Generated_Image_uy4daguy4daguy4d.png",
     "difficulty": "Hard",
     "duration": "90-120 days",
     "steps": [
@@ -265,7 +265,7 @@ const crops: Crop[] = [
   {
     "id": 6,
     "name": "Oats",
-    "image": "https://picsum.photos/seed/oats/400/300",
+    "image": "/images/Gemini_Generated_Image_huhktvhuhktvhuhk.png",
     "difficulty": "Easy",
     "duration": "120-150 days",
     "steps": [
@@ -314,7 +314,7 @@ const crops: Crop[] = [
   {
     "id": 7,
     "name": "Sugarcane",
-    "image": "https://picsum.photos/seed/sugarcane/400/300",
+    "image": "/images/Gemini_Generated_Image_7mm0pg7mm0pg7mm0.png",
     "difficulty": "Medium",
     "duration": "6-12 months",
     "steps": [
@@ -363,7 +363,7 @@ const crops: Crop[] = [
   {
     "id": 8,
     "name": "Cotton",
-    "image": "https://picsum.photos/seed/cotton/400/300",
+    "image": "/images/Gemini_Generated_Image_zi7ui0zi7ui0zi7u.png",
     "difficulty": "Hard",
     "duration": "60-90 days",
     "steps": [
@@ -461,7 +461,7 @@ const crops: Crop[] = [
   {
     "id": 10,
     "name": "Groundnut",
-    "image": "https://picsum.photos/seed/groundnut/400/300",
+    "image": "/images/Gemini_Generated_Image_232bzc232bzc232b.png",
     "difficulty": "Medium",
     "duration": "120-150 days",
     "steps": [
@@ -510,7 +510,7 @@ const crops: Crop[] = [
   {
     "id": 11,
     "name": "Mustard",
-    "image": "https://picsum.photos/seed/mustard/400/300",
+    "image": "/images/Gemini_Generated_Image_ihxwm0ihxwm0ihxw (1).png",
     "difficulty": "Hard",
     "duration": "6-12 months",
     "steps": [
@@ -559,7 +559,7 @@ const crops: Crop[] = [
   {
     "id": 12,
     "name": "Peas",
-    "image": "https://picsum.photos/seed/peas/400/300",
+    "image": "/images/Gemini_Generated_Image_beudmhbeudmhbeud.png",
     "difficulty": "Easy",
     "duration": "60-90 days",
     "steps": [
@@ -608,7 +608,7 @@ const crops: Crop[] = [
   {
     "id": 13,
     "name": "Lentils",
-    "image": "https://picsum.photos/seed/lentils/400/300",
+    "image": "/images/Gemini_Generated_Image_axaq5faxaq5faxaq.png",
     "difficulty": "Medium",
     "duration": "90-120 days",
     "steps": [
@@ -657,7 +657,7 @@ const crops: Crop[] = [
   {
     "id": 14,
     "name": "Chickpeas",
-    "image": "https://picsum.photos/seed/chickpeas/400/300",
+    "image": "/images/Gemini_Generated_Image_vsuu77vsuu77vsuu.png",
     "difficulty": "Hard",
     "duration": "120-150 days",
     "steps": [
@@ -706,7 +706,7 @@ const crops: Crop[] = [
   {
     "id": 15,
     "name": "Millet",
-    "image": "https://picsum.photos/seed/millet/400/300",
+    "image": "/images/Gemini_Generated_Image_lahsnelahsnelahs.png",
     "difficulty": "Easy",
     "duration": "6-12 months",
     "steps": [
@@ -755,7 +755,7 @@ const crops: Crop[] = [
   {
     "id": 16,
     "name": "Sorghum",
-    "image": "https://picsum.photos/seed/sorghum/400/300",
+    "image": "/images/Gemini_Generated_Image_h1jxe2h1jxe2h1jx.png",
     "difficulty": "Medium",
     "duration": "60-90 days",
     "steps": [
@@ -804,7 +804,7 @@ const crops: Crop[] = [
   {
     "id": 17,
     "name": "Potato",
-    "image": "https://picsum.photos/seed/potato/400/300",
+    "image": "/images/Gemini_Generated_Image_q722pgq722pgq722.png",
     "difficulty": "Hard",
     "duration": "90-120 days",
     "steps": [
@@ -948,51 +948,51 @@ const crops: Crop[] = [
       }
     ]
   },
-  {
+ {
     "id": 20,
-    "name": "Carrot",
-    "image": "https://picsum.photos/seed/carrot/400/300",
-    "difficulty": "Hard",
-    "duration": "60-90 days",
+    "name": "Carrots",
+    "image": "https://cdn.britannica.com/40/1740-050-5CF4208A/carrots.jpg",
+    "difficulty": "Easy",
+    "duration": "70-90 days",
     "steps": [
       {
         "title": "Seed Preparation",
-        "description": "Prepare high-quality seeds for Carrot.",
+        "description": "Select high-quality carrot seeds.",
         "tips": [
-          "Use certified seeds",
-          "Check moisture levels"
+          "Use fresh seeds",
+          "Check for uniform size"
         ]
       },
       {
         "title": "Soil Preparation",
-        "description": "Prepare fertile soil for Carrot.",
+        "description": "Prepare loose, sandy soil for Carrots.",
         "tips": [
-          "Add compost",
-          "Check pH between 6-7"
+          "Remove stones",
+          "Ensure soil is well-drained"
         ]
       },
       {
         "title": "Planting",
-        "description": "Plant Carrot seeds properly.",
+        "description": "Sow carrot seeds directly in the soil.",
         "tips": [
-          "Maintain spacing",
-          "Plant at right depth"
+          "Plant 1/4 inch deep",
+          "Space rows 12 inches apart"
         ]
       },
       {
-        "title": "Watering & Care",
-        "description": "Irrigate Carrot crops carefully.",
+        "title": "Watering",
+        "description": "Keep soil consistently moist.",
         "tips": [
-          "Avoid overwatering",
-          "Mulch to retain moisture"
+          "Water regularly",
+          "Avoid waterlogging"
         ]
       },
       {
         "title": "Harvesting",
-        "description": "Harvest Carrot when ready.",
+        "description": "Harvest carrots when they reach desired size.",
         "tips": [
-          "Harvest at right time",
-          "Store properly"
+          "Loosen soil before pulling",
+          "Harvest in cooler parts of the day"
         ]
       }
     ]
