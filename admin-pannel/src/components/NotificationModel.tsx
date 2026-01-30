@@ -42,8 +42,8 @@ const NotificationModal: React.FC<NotificationModalProps> = ({ isOpen, onClose, 
     // 👇 route change based on targetType
     const url =
       targetType === "all" || targetType === "state" || targetType === "district"
-        ? "http://localhost:4000/api/notificationsall/notify"
-        : "http://localhost:4000/api/notifications/notify";
+        ? "https://kisaan-portal-backend.onrender.com/api/notificationsall/notify"
+        : "https://kisaan-portal-backend.onrender.com/api/notifications/notify";
 
     const res = await axios.post(url, payload, {
       headers: { Authorization: `Bearer ${token}` },
