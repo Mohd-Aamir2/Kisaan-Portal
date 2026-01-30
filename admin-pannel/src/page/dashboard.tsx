@@ -45,16 +45,16 @@ const Dashboard: React.FC = () => {
     const fetchData = async () => {
       try {
         // Fetch users
-        const usersRes = await axios.get('http://localhost:4000/api/user/all');
+        const usersRes = await axios.get('https://kisaan-portal-backend.onrender.com/api/user/all');
         setTotalUsers(usersRes.data.users.length);
 
         // Fetch feedback
-        const feedbackRes = await axios.get('http://localhost:4000/api/feedback');
+        const feedbackRes = await axios.get('https://kisaan-portal-backend.onrender.com/api/feedback');
         setFeedback(feedbackRes.data); // array of feedback
         setFeedbackCount(feedbackRes.data.length);
 
         // Fetch notifications (if you have a notifications endpoint)
-        const notificationsRes = await axios.get('http://localhost:4000/api/notificationsall/all');
+        const notificationsRes = await axios.get('https://kisaan-portal-backend.onrender.com/api/notificationsall/all');
         setNotifications(notificationsRes.data.notifications);
         setNotificationsSent(notificationsRes.data.notifications.length);
 
