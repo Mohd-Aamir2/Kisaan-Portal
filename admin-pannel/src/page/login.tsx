@@ -29,8 +29,8 @@ const AuthPage = () => {
 
     try {
       const endpoint = isLogin
-        ? "http://localhost:4000/api/admin/login"
-        : "http://localhost:4000/api/admin/signup";
+        ? "https://kisaan-portal-backend.onrender.com/api/admin/login"
+        : "https://kisaan-portal-backend.onrender.com/api/admin/signup";
 
       const body = isLogin
         ? { email, password }
