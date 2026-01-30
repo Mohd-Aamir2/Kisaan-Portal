@@ -28,7 +28,7 @@ const CropHistory: React.FC = () => {
     const fetchCrops = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:4000/api/crops/all", {
+        const res = await axios.get("https://kisaan-portal-backend.onrender.com/api/crops/all", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setCrops(res.data.crops || []);
