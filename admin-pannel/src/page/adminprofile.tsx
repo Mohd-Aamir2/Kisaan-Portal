@@ -38,10 +38,10 @@ export default function AdminProfilePage() {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const usersRes = await axios.get("http://localhost:4000/api/user/all");
+        const usersRes = await axios.get("https://kisaan-portal-backend.onrender.com/api/user/all");
         setTotalUsers(usersRes.data.users.length);
 
-        const feedbackRes = await axios.get("http://localhost:4000/api/feedback");
+        const feedbackRes = await axios.get("https://kisaan-portal-backend.onrender.com/api/feedback");
         setTotalFeedbacks(feedbackRes.data.length);
       } catch (err) {
         console.error("Error fetching counts:", err);
