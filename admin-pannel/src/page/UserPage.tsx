@@ -21,7 +21,7 @@ const UsersPage: React.FC = () => {
   // Fetch users from backend
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("http://localhost:4000/api/user/all"); 
+      const res = await axios.get("https://kisaan-portal-backend.onrender.com/api/user/all"); 
       setUsers(res.data.users); // { users: [...] }
       setIsLoading(false);
     } catch (err) {
@@ -38,7 +38,7 @@ const UsersPage: React.FC = () => {
   const deleteUser = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      await axios.delete(`http://localhost:4000/api/user/${id}`);
+      await axios.delete(`https://kisaan-portal-backend.onrender.com/api/user/${id}`);
       setUsers((prev) => prev.filter((user) => user._id !== id));
     } catch (err) {
       console.error(err);
