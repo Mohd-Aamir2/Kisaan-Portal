@@ -29,7 +29,7 @@ const FeedbackPage: React.FC = () => {
   useEffect(() => {
     const fetchFeedback = async () => {
       try {
-        const res = await axios.get("http://localhost:4000/api/feedback");
+        const res = await axios.get("https://kisaan-portal-backend.onrender.com/api/feedback");
         setFeedback(res.data);
       } catch (err) {
         console.error(err);
@@ -74,7 +74,7 @@ const FeedbackPage: React.FC = () => {
       );
       setReplyText(prev => ({ ...prev, [fbId]: '' }));
       // Refresh feedbacks after reply
-      const res = await axios.get("http://localhost:4000/api/feedback");
+      const res = await axios.get("https://kisaan-portal-backend.onrender.com/api/feedback");
       setFeedback(res.data);
     } catch (err) {
       console.error("Error posting reply:", err);
