@@ -64,7 +64,7 @@ export const Profile: React.FC = () => {
        console.log("userId",userId);
        console.log("email",email);
       const res = await axios.put(
-        `http://localhost:4000/api/user/${userId}`,
+        `https://kisaan-portal-backend.onrender.com/api/user/${userId}`,
         {
           name: formData.name,
           email: formData.email,
