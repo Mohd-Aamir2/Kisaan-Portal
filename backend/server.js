@@ -30,8 +30,23 @@ const port=process.env.PORT||4000;
 const app=express()
 
 app.use(express.json())
-app.use(cors());
+const allowedOrigins = [
+  process.env.FRONTEND_URL || true,
+  process.env.ADMIN_URL || true,
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+}));
 app.use(bodyParser.json());
+app.use(middleware.handle(i18next));
 // i18next initialization
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -57,8 +72,8 @@ app.use('/api/user',userrouter);
 app.use("/api/soil", soilRoutes);
 app.use("/api/marketprices", marketRoutes);
 app.use("/api", questionroutes);
-app.use(middleware.handle(i18next));
-app.use("/api", soilRoutes);
+
+
 app.use("/api", translationRoutes);     
 app.use("/api",Feedback);
 app.use('/api/crops',croproute);
