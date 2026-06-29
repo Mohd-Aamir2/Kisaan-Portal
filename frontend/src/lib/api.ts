@@ -35,11 +35,11 @@ export async function putFeedback(
   data: { title?: string; content?: string; improvements?: string[] },
   token: string
 ): Promise<Feedback> {
-  const res = await api.put(`/${id}`, data, authHeaders(token));
+  const res = await api.put(`/feedback/${id}`, data, authHeaders(token)); // fixed
   return res.data;
 }
 
 export async function delFeedback(id: string, token: string) {
-  const res = await api.delete(`/${id}`, authHeaders(token));
+  const res = await api.delete(`/feedback/${id}`, authHeaders(token)); // fixed
   return res.data;
 }
