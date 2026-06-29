@@ -1,5 +1,5 @@
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
-import { EditProfileForm } from "@/components/settings/edit-profile-form";
+import { Profile } from "@/components/edit-profile/edit-profile-form";
 
 export default function EditProfilePage() {
   return (
@@ -10,7 +10,7 @@ export default function EditProfilePage() {
       />
       <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
         <div className="max-w-3xl mx-auto">
-            <EditProfileForm />
+            <Profile />
         </div>
       </main>
     </div>
