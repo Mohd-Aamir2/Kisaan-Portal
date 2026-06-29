@@ -31,15 +31,16 @@ const app=express()
 
 app.use(express.json())
 const allowedOrigins = [
-  process.env.FRONTEND_URL || true,
-  process.env.ADMIN_URL || true,
-];
+  process.env.FRONTEND_URL,
+  process.env.ADMIN_URL,
+].filter(Boolean); // undefined/empty values hata dega
 
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.log("Blocked by CORS:", origin); // debug ke liye
       callback(new Error("Not allowed by CORS"));
     }
   },
