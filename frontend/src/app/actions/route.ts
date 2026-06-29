@@ -1,23 +1,56 @@
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-
-// ⚠️ Replace with your own DB check
-const USERS = [{ email: "farmer@example.com", password: "12345678" }];
+import bcrypt from "bcryptjs";
+import { connectDB } from "@/lib/mongodb";
+import User from "@/models/User";
 
 export async function POST(req: Request) {
-  const { email, password } = await req.json();
+  try {
+    await connectDB();
+    const { email, password } = await req.json();
 
-  const user = USERS.find((u) => u.email === email && u.password === password);
-  if (!user) {
-    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    if (!email || !password) {
+      return NextResponse.json(
+        { success: false, error: "Email and password required" },
+        { status: 400 }
+      );
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: "Invalid credentials" },
+        { status: 401 }
+      );
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return NextResponse.json(
+        { success: false, error: "Invalid credentials" },
+        { status: 401 }
+      );
+    }
+
+    const token = jwt.sign(
+      { email: user.email, id: user._id },
+      process.env.JWT_SECRET!,
+      { expiresIn: "1h" }
+    );
+
+    const res = NextResponse.json({ success: true, user: { name: user.name, email: user.email } });
+    res.cookies.set("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60, // 1 hour
+    });
+    return res;
+  } catch (error: any) {
+    console.error("❌ Login Error:", error);
+    return NextResponse.json(
+      { success: false, error: error.message || "Internal Server Error" },
+      { status: 500 }
+    );
   }
-
-  const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET!, {
-    expiresIn: "1h",
-  });
-
-  // send cookie
-  const res = NextResponse.json({ success: true });
-  res.cookies.set("token", token, { httpOnly: true });
-  return res;
 }

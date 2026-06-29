@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: Request) {
   try {
@@ -17,6 +18,10 @@ export async function POST(req: Request) {
       );
     }
 
+    const hashedPassword = await bcrypt.hash(body.password, 10);
+
+
+
     // Check if user exists
     const existingUser = await User.findOne({ email: body.email });
     if (existingUser) {
@@ -30,7 +35,7 @@ export async function POST(req: Request) {
     const user = await User.create({
       name: body.name,
       email: body.email,
-      password: body.password,
+      password: hashedPassword,
       farmSize: body.farmSize,
       soilType: body.soilType,
       location: body.location,
