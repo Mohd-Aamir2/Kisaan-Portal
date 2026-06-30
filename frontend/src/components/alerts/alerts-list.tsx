@@ -62,7 +62,7 @@ export function AlertsList() {
       if (!token) return;
 
       try {
-        const res = await axios.get("http://localhost:4000/api/notifications", {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/notifications`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setNotifications(res.data.notifications || []);

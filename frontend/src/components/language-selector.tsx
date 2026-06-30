@@ -61,7 +61,7 @@ export function LanguageSelector() {
       for (const node of allTextNodes) {
         const original = node.nodeValue || "";
         try {
-          const res = await fetch("http://localhost:4000/api/translate", {
+         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/translate`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text: original, targetLang }),

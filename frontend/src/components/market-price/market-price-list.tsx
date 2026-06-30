@@ -45,7 +45,7 @@ const MarketPrice: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   // change backendUrl to your actual backend origin if needed
-  const backendUrl = "http://localhost:4000";
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:4000";
 
   useEffect(() => {
     if (!district) {
