@@ -37,10 +37,19 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Allow karo agar:
+    // 1. Same origin request (Postman/server)
+    // 2. Koi bhi kisaan-portal*.vercel.app URL
+    // 3. Explicitly set FRONTEND_URL
+    if (
+      !origin ||
+      origin === process.env.FRONTEND_URL ||
+      origin === process.env.ADMIN_URL ||
+      /^https:\/\/kisaan-portal.*\.vercel\.app$/.test(origin)
+    ) {
       callback(null, true);
     } else {
-      console.log("Blocked by CORS:", origin); // debug ke liye
+      console.log("Blocked by CORS:", origin);
       callback(new Error("Not allowed by CORS"));
     }
   },
