@@ -63,8 +63,8 @@ export const Profile: React.FC = () => {
       const token = localStorage.getItem("token");
        console.log("userId",userId);
        console.log("email",email);
-      const res = await axios.put(
-        `https://kisaan-portal-backend.onrender.com/api/user/${userId}`,
+      const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/user/${userId}`
+        ,
         {
           name: formData.name,
           email: formData.email,

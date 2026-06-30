@@ -37,7 +37,7 @@ const Login: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // 🔹 Yahan apne backend ka URL daalo
-  const backendUrl = "https://kisaan-portal-backend.onrender.com";  
+ const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:4000";  
 
   const states = [
     'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
