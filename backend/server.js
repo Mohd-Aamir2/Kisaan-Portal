@@ -38,14 +38,11 @@ const allowedOrigins = [
 ].filter(Boolean); // undefined/empty values hata dega
 
 // Local development origins (production mein skip)
-if (process.env.NODE_ENV !== "production") {
-  allowedOrigins.push(
-    "http://localhost:9002",
-    "http://localhost:3000",
-    "http://localhost:5173" // agar Vite use kar rahe ho
-  );
-}
-
+allowedOrigins.push(
+  "http://localhost:9002",
+  "http://localhost:3000",
+  "http://localhost:5173"
+);
 app.use(cors({
   origin: function (origin, callback) {
     // Allow karo agar:
