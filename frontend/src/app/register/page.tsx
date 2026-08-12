@@ -6,6 +6,7 @@ import { Sprout, User, Phone, MapPin, Map, Layers, Mail, Lock, Eye, EyeOff, X } 
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { AppContext } from "../context/appcontext";
+import { LanguageSelector } from "@/components/language-selector";
 
 
 const Login: React.FC = () => {
@@ -163,7 +164,12 @@ const Login: React.FC = () => {
       </div>
       
       <div className="max-w-md w-full">
-        
+
+        {/* Language Selector */}
+        <div className="flex justify-end mb-3">
+          <LanguageSelector />
+        </div>
+
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-3 mb-6">

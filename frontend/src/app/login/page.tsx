@@ -6,6 +6,7 @@ import { Sprout, User, Phone, MapPin, Map, Layers, Mail, Lock, Eye, EyeOff, X } 
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { AppContext } from "../context/appcontext";
+import { LanguageSelector } from "@/components/language-selector";
 
 
 const Login: React.FC = () => {
@@ -37,7 +38,7 @@ const Login: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // 🔹 Yahan apne backend ka URL daalo
- const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:4000";  
+  const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:4000"; 
 
   const states = [
     'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
@@ -109,21 +110,21 @@ const Login: React.FC = () => {
         let response;
 
         if (isLogin) {
-          //  Login API call
+          //Login API call
           response = await axios.post(backendUrl+'/api/user/login' ,{
             email: formData.email,
             password: formData.password
-            
           });
-         console.log("response of backend", response.data);
+        
 
         } else {
-          // 🔹 Register API call
+          //Register API call
           response = await axios.post(backendUrl+'/api/user/register', formData);
            console.log("response of backend", response.data);
         }
 
         if (response.data.success) {
+          console.log(response);
           toast.success(isLogin ? "Login successful!" : "Registration successful!");
            setToken(response.data.token)
            setName(response.data.name)
@@ -163,7 +164,12 @@ const Login: React.FC = () => {
       </div>
       
       <div className="max-w-md w-full">
-        
+
+        {/* Language Selector */}
+        <div className="flex justify-end mb-3">
+          <LanguageSelector />
+        </div>
+
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-3 mb-6">
