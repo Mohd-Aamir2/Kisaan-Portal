@@ -30,21 +30,31 @@ const port=process.env.PORT||4000;
 const app=express()
 
 app.use(express.json())
+
+// ---- CORS SETUP ----
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.ADMIN_URL,
 ].filter(Boolean); // undefined/empty values hata dega
 
+// Local development origins (production mein skip)
+if (process.env.NODE_ENV !== "production") {
+  allowedOrigins.push(
+    "http://localhost:9002",
+    "http://localhost:3000",
+    "http://localhost:5173" // agar Vite use kar rahe ho
+  );
+}
+
 app.use(cors({
   origin: function (origin, callback) {
     // Allow karo agar:
-    // 1. Same origin request (Postman/server)
-    // 2. Koi bhi kisaan-portal*.vercel.app URL
-    // 3. Explicitly set FRONTEND_URL
+    // 1. Same origin request (Postman/server-to-server, origin undefined hota hai)
+    // 2. Allowed list mein origin ho (FRONTEND_URL, ADMIN_URL, localhost)
+    // 3. Koi bhi kisaan-portal*.vercel.app URL
     if (
       !origin ||
-      origin === process.env.FRONTEND_URL ||
-      origin === process.env.ADMIN_URL ||
+      allowedOrigins.includes(origin) ||
       /^https:\/\/kisaan-portal.*\.vercel\.app$/.test(origin)
     ) {
       callback(null, true);
@@ -55,6 +65,8 @@ app.use(cors({
   },
   credentials: true,
 }));
+// ---- CORS SETUP END ----
+
 app.use(bodyParser.json());
 app.use(middleware.handle(i18next));
 // i18next initialization
