@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+// @ts-ignore: side-effect import for global styles
 import "./globals.css";
 import AppProvider from "./context/appcontext";
 import { Toaster } from "@/components/ui/toaster";

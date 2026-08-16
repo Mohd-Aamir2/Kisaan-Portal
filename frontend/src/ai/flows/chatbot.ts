@@ -1,12 +1,14 @@
 'use server';
 
 /**
- * @fileOverview A multi-language chatbot for agricultural advice.
+ * @fileOverview A multi-language chatbot for agricultural advice, grounded in
+ * Kisan Call Centre (KCC) records via Atlas Vector Search.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getWeather } from '@/ai/tools/weather';
+import { retrieveKcc, formatKccContext } from '@/lib/kcc-retriever';
 
 // ✅ Input schema
 const ChatInputSchema = z.object({
@@ -36,128 +38,158 @@ const ChatOutputSchema = z.object({
 });
 export type ChatOutput = z.infer<typeof ChatOutputSchema>;
 
+const MAX_HISTORY_TURNS = 6;
+const RETRIEVE_COUNT = 4;
+
 // ✅ Voice detector
 function detectVoiceByText(text: string): ChatOutput['voice'] {
   const t = text || '';
   if (/[\u0B80-\u0BFF]/.test(t)) return 'Antares'; // Tamil
   if (/[\u0C00-\u0C7F]/.test(t)) return 'Canopus'; // Telugu
-  if (/[\u0900-\u097F]/.test(t)) return 'Sirius'; // Hindi/Marathi (default Hindi)
-  return 'Algenib'; // fallback English
+  if (/[\u0900-\u097F]/.test(t)) return 'Sirius';  // Hindi/Marathi
+  return 'Algenib'; // English
 }
 
-// ✅ Main chat function
 export async function chat(input: ChatInput): Promise<ChatOutput> {
   return chatFlow(input);
 }
 
-// ✅ Flow function (string prompt version)
 async function chatFlow(input: ChatInput): Promise<ChatOutput> {
-  // Convert history into text lines
+  const voice = detectVoiceByText(input.message);
+
   const historyText = (input.history || [])
+    .slice(-MAX_HISTORY_TURNS)
     .map((m) => `${m.role}: ${m.content}`)
     .join("\n");
 
-  // Farm profile defaults
-  const farmProfile = {
-    farmSize: input.farmProfile?.farmSize ?? 50,
-    soilType: input.farmProfile?.soilType ?? "loamy",
-    location: input.farmProfile?.location ?? "Central Valley, California",
-    cropPreference: input.farmProfile?.cropPreference ?? "High-yield cash crop",
-  };
+  // Profile - sirf jo maujood hai wahi bhejo, fake defaults nahi
+  const p = input.farmProfile ?? {};
+  const profileLines: string[] = [];
+  if (p.location) profileLines.push(`- Location: ${p.location}`);
+  if (p.farmSize != null) profileLines.push(`- Size: ${p.farmSize} acres`);
+  if (p.soilType) profileLines.push(`- Soil type: ${p.soilType}`);
+  if (p.cropPreference) profileLines.push(`- Crop preference: ${p.cropPreference}`);
 
-  // System prompt
-  const systemPrompt = `You are an expert agricultural advisor bot named Kisaan.
-Your goal is to provide helpful and accurate information to farmers.
-You must respond to the user in the same language they used.
-Supported languages are: English, Hindi, Tamil, Marathi, and Telugu.
-If you don't know the answer, say that you don't know.
+  const profileBlock = profileLines.length
+    ? `Farmer's profile:\n${profileLines.join("\n")}`
+    : `No farm profile available. If a detail (location, soil type, crop) is needed to answer safely, ask for it instead of assuming.`;
 
-When you respond, you must also select the appropriate voice for the language:
-- English: 'Algenib'
-- Hindi: 'Sirius'
-- Tamil: 'Antares'
-- Marathi: 'Spica'
-- Telugu: 'Canopus'
-
-Here is the user's farm information:
-- Location: ${farmProfile.location}
-- Size: ${farmProfile.farmSize} acres
-- SoilType: ${farmProfile.soilType}
-- Crop Preference: ${farmProfile.cropPreference}
-`;
-
-  // ✅ Weather keyword detection
+  // ─── Weather shortcut ────────────────────────────────────────
   const weatherKeywords = [
     "weather", "climate", "rain", "temperature", "forecast",
-    "mausam", "baarish", "barish", "tapman", "hawa", "mosam", "aaj", "kal"
+    "mausam", "mosam", "baarish", "barish", "tapman",
   ];
   const normalized = input.message.toLowerCase();
-  const isWeatherQuery = weatherKeywords.some((w) => normalized.includes(w));
 
-  // ✅ Weather shortcut
-  if (isWeatherQuery) {
+  if (weatherKeywords.some((w) => normalized.includes(w))) {
+    const location = p.location;
+
+    if (!location) {
+      const askMsg =
+        voice === 'Sirius'  ? 'मौसम बताने के लिए आपका ज़िला चाहिए। कृपया अपना ज़िला बताएं।' :
+        voice === 'Antares' ? 'வானிலை தெரிவிக்க உங்கள் மாவட்டம் தேவை.' :
+        voice === 'Canopus' ? 'వాతావరణం చెప్పడానికి మీ జిల్లా కావాలి.' :
+        voice === 'Spica'   ? 'हवामान सांगण्यासाठी तुमचा जिल्हा हवा आहे.' :
+        'I need your district to check the weather. Could you tell me your location?';
+      return { response: askMsg, voice };
+    }
+
     try {
-      const weather = await getWeather({ location: farmProfile.location });
+      const weather = await getWeather({ location });
 
       let weatherText = '';
       if (!weather) {
-        weatherText = `Currently I couldn't fetch the weather for ${farmProfile.location}.`;
+        weatherText = `Currently I couldn't fetch the weather for ${location}.`;
       } else if (typeof weather === 'string') {
         weatherText = weather;
       } else if (typeof weather === 'object') {
+        const w = weather as Record<string, unknown>;
         const parts: string[] = [];
-        if ('summary' in weather && weather.summary) parts.push(String((weather as any).summary));
-        if ('temperature' in weather && (weather as any).temperature != null)
-          parts.push(`Temperature: ${(weather as any).temperature}°`);
-        if ('chanceOfRain' in weather && (weather as any).chanceOfRain != null)
-          parts.push(`Rain chance: ${(weather as any).chanceOfRain}%`);
+        if (w.summary) parts.push(String(w.summary));
+        if (w.temperature != null) parts.push(`Temperature: ${w.temperature}°`);
+        if (w.chanceOfRain != null) parts.push(`Rain chance: ${w.chanceOfRain}%`);
         weatherText = parts.length ? parts.join(' · ') : JSON.stringify(weather);
       } else {
         weatherText = String(weather);
       }
 
-      const voice = detectVoiceByText(input.message);
-
       const opening =
-        voice === 'Sirius' ? `आपके खेत (${farmProfile.location}) का मौस‍म:` :
-        voice === 'Antares' ? `உங்கள் வயலில் (${farmProfile.location}) வானிலை:` :
-        voice === 'Canopus' ? `మీ వ్యవసాయ స్థలం (${farmProfile.location}) వాతావరణం:` :
-        voice === 'Spica' ? `तुमच्या शेताचा (${farmProfile.location}) हवामान:` :
-        `Current weather at ${farmProfile.location}:`;
+        voice === 'Sirius'  ? `आपके खेत (${location}) का मौसम:` :
+        voice === 'Antares' ? `உங்கள் வயலில் (${location}) வானிலை:` :
+        voice === 'Canopus' ? `మీ వ్యవసాయ స్థలం (${location}) వాతావరణం:` :
+        voice === 'Spica'   ? `तुमच्या शेताचे (${location}) हवामान:` :
+        `Current weather at ${location}:`;
 
+      return { response: `${opening} ${weatherText}`, voice };
+    } catch (err) {
+      console.error('[chatbot] weather fetch failed:', err);
       return {
-        response: `${opening} ${weatherText}`,
+        response: `I'm sorry — I couldn't fetch the weather right now. Please try again in a moment.`,
         voice,
-      };
-    } catch (err: any) {
-      return {
-        response: `I'm sorry — I couldn't fetch the weather right now: ${err?.message ?? 'unknown error'}`,
-        voice: detectVoiceByText(input.message),
       };
     }
   }
 
-  // ✅ Build one big string prompt
-  const singlePrompt = `
-System: ${systemPrompt}
+  // ─── RAG: KCC records retrieve karo ──────────────────────────
+  // Fail ho to khali array aata hai aur bot bina context ke jawab
+  // de deta hai - retrieval down hone se chat nahi rukni chahiye.
+  const docs = await retrieveKcc(input.message, {
+    limit: RETRIEVE_COUNT,
+    district: p.location || undefined,
+  });
 
+  const contextBlock = docs.length
+    ? `Reference material — real answers given by Kisan Call Centre advisors to farmers with similar questions:
+
+${formatKccContext(docs)}
+
+Use this material when it fits the farmer's question — especially the specific chemical names, doses, and intervals. If it does not fit, ignore it and answer from your own knowledge. Do not mention that you consulted reference material.`
+    : '';
+
+  console.log(`[chatbot] retrieved ${docs.length} KCC docs` +
+    (docs.length ? ` (top score ${docs[0].score.toFixed(3)})` : ''));
+
+  // ─── Prompt ──────────────────────────────────────────────────
+  const systemPrompt = `You are an expert agricultural advisor bot named Kisaan, helping farmers in India.
+
+Rules:
+- Respond in the SAME language the farmer used. Supported: English, Hindi, Tamil, Marathi, Telugu.
+- Keep answers short and practical. Farmers often read this on a phone.
+- When recommending a pesticide or fertilizer, state the dose and the interval.
+- If you are not sure, say so and suggest contacting the local Krishi Vigyan Kendra (KVK).
+- Never invent scheme deadlines, subsidy amounts, or prices.
+
+${profileBlock}`;
+
+  const singlePrompt = `System: ${systemPrompt}
+${contextBlock ? `\n${contextBlock}\n` : ''}
 ${historyText}
 
 User: ${input.message}
 `;
 
-  // ✅ Call Genkit generate()
-  const llmResponse = await ai.generate(singlePrompt);
+  try {
+    const llmResponse = await ai.generate({
+      prompt: singlePrompt,
+      config: {
+        maxOutputTokens: 600,
+        temperature: 0.7,
+      },
+    });
 
-  if (!llmResponse || !llmResponse.text) {
+    if (!llmResponse?.text) {
+      return {
+        response: "I'm sorry, I couldn't generate a response. Please try again.",
+        voice,
+      };
+    }
+
+    return { response: llmResponse.text, voice };
+  } catch (err) {
+    console.error('[chatbot] generate failed:', err);
     return {
-      response: "I'm sorry, I couldn't generate a response.",
-      voice: "Algenib",
+      response: "I'm having trouble reaching the AI service right now. Please try again in a moment.",
+      voice,
     };
   }
-
-  return {
-    response: llmResponse.text,
-    voice: detectVoiceByText(input.message),
-  };
 }

@@ -187,9 +187,9 @@ const Login: React.FC = () => {
         </div>
 
         {/* Login/Registration Form */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20">
+        <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-white/20">
         <button
-          onClick={() => {goToRegister}}
+          onClick={goToRegister}
           className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-200 transition z-10"
         >
           <X className="w-6 h-6 text-gray-600" />

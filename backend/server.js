@@ -24,7 +24,8 @@ import adminRoutes from "./routes/adminRoutes.js";
 import notificationroute from "./routes/notificationroutes.js";
 import notificationallroute from './routes/notificationall.js';
 
-
+import dns from "node:dns";
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
 const port=process.env.PORT||4000;
 const app=express()

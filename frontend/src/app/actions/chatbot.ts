@@ -1,31 +1,54 @@
-// File: 'use server' file (Example: frontend/src/app/actions.ts)
-
 "use server";
 
 import { chat } from "@/ai/flows/chatbot";
 import { textToSpeech } from "@/ai/flows/tts";
 
-export async function sendMessage(message: string, history: any[]) {
-    try {
-        const chatResponse = await chat({ message, history });
-        if (!chatResponse.response) {
-            return { text: "I'm sorry, I couldn't generate a response." };
-        }
+type FarmProfile = {
+  farmSize?: number;
+  soilType?: string;
+  location?: string;
+  cropPreference?: string;
+};
 
-        // ✅ Wait for TTS to finish (so audio is ready to return)
-        const ttsResponse = await textToSpeech({
-            text: chatResponse.response,
-            // ⚠️ CHANGES HERE: 'alloy' (Google TTS default) को 
-            // 'Algenib' (ElevenLabs default/fallback) से बदलें
-            voice: chatResponse.voice ?? "Algenib", 
-        });
+type ChatHistoryItem = {
+  role: "user" | "assistant" | "system";
+  content: string;
+};
 
-        return {
-            text: chatResponse.response,
-            audio: ttsResponse?.audio ?? null, // send audio back as base64 string
-        };
-    } catch (error) {
-        console.error("Error:", error);
-        return { text: "I'm sorry, an error occurred. Please try again." };
-    }
+export async function sendMessage(
+  message: string,
+  history: ChatHistoryItem[],
+  farmProfile?: FarmProfile
+) {
+  let chatResponse;
+
+  try {
+    chatResponse = await chat({ message, history, farmProfile });
+  } catch (error) {
+    console.error("[sendMessage] chat failed:", error);
+    return { text: "I'm sorry, an error occurred. Please try again.", audio: null };
+  }
+
+  if (!chatResponse?.response) {
+    return { text: "I'm sorry, I couldn't generate a response.", audio: null };
+  }
+
+  // TTS optional hai. Fail ho to bhi text zaroor jaana chahiye -
+  // pehle ye same try block me tha, isliye ek missing API key
+  // pura jawab kha jaati thi.
+  let audio: string | null = null;
+  try {
+    const ttsResponse = await textToSpeech({
+      text: chatResponse.response,
+      voice: chatResponse.voice ?? "Algenib",
+    });
+    audio = ttsResponse?.audio ?? null;
+  } catch (error) {
+    console.warn("[sendMessage] TTS unavailable, returning text only:", error);
+  }
+
+  return {
+    text: chatResponse.response,
+    audio,
+  };
 }

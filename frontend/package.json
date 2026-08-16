@@ -46,6 +46,7 @@
     "genkit": "^1.14.1",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.475.0",
+    "mongodb": "^7.5.0",
     "mongoose": "^8.18.1",
     "next": "^15.5.19",
     "patch-package": "^8.0.0",
