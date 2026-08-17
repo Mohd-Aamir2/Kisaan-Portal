@@ -9,6 +9,7 @@ import Link from "next/link";
 import { ArrowRight, Home } from "lucide-react";
 import { useContext } from "react";
 import { AppContext } from "../context/appcontext";
+import { CropTrackerWidget } from "@/components/dashboard/crop-tracker-widget"
 
 export default function DashboardPage() {
   const context = useContext(AppContext);
@@ -60,6 +61,7 @@ export default function DashboardPage() {
           </div>
           <div className="lg:col-span-2 grid gap-6">
             <SoilHealthWidget />
+            <CropTrackerWidget />
             <HistoricalDataWidget />
           </div>
         </div>

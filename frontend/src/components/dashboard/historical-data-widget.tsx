@@ -21,16 +21,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authHeaders } from "@/lib/api";
-import { PlusCircle, XCircle, Edit, Trash2, Save } from "lucide-react";
+import { Edit, Trash2, Save, Loader2 } from "lucide-react";
 
 interface CropOutcome {
   _id?: string;
   cropType: string;
-  fertilizerUsed: string;
-  yield: number;
+  yield?: number;
+  fertilizerUsed?: string;
+  sowingDate?: string;
+  harvestDate?: string;
+  status?: string;
   lastFertilizingDate?: string;
   lastPestDate?: string;
 }
+
+const fmtDate = (iso?: string) =>
+  iso ? new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—";
 
 export function HistoricalDataWidget() {
   const context = useContext(AppContext);
@@ -39,60 +45,42 @@ export function HistoricalDataWidget() {
 
   const { token } = context;
   const [data, setData] = useState<CropOutcome[]>([]);
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState<CropOutcome>({
-    cropType: "",
-    fertilizerUsed: "",
-    yield: 0,
-    lastFertilizingDate: "",
-    lastPestDate: "",
-  });
+  const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingData, setEditingData] = useState<CropOutcome>({
-    cropType: "",
-    fertilizerUsed: "",
-    yield: 0,
-    lastFertilizingDate: "",
-    lastPestDate: "",
-  });
+  const [editingData, setEditingData] = useState<CropOutcome>({ cropType: "" });
 
   useEffect(() => {
     if (!token) return;
     const fetchCrops = async () => {
       try {
         const res = await api.get("/crops", authHeaders(token));
-        setData(res.data);
+        // Sirf kati hui fasal. Chal rahi fasal Crop Tracker me dikhti hai.
+        setData(
+          res.data.filter(
+            (c: CropOutcome) => c.status === "harvested" || c.status === "failed"
+          )
+        );
       } catch (err) {
         console.error(err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchCrops();
   }, [token]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!token) return;
-    try {
-      const res = await api.post("/crops", formData, authHeaders(token));
-      setData((prev) => [res.data, ...prev]);
-      setFormData({
-        cropType: "",
-        fertilizerUsed: "",
-        yield: 0,
-        lastFertilizingDate: "",
-        lastPestDate: "",
-      });
-      setShowForm(false);
-    } catch (err) {
-      console.error("Error adding crop:", err);
-    }
-  };
-
   const handleSaveEdit = async (id: string) => {
     if (!token) return;
     try {
-      const res = await api.put(`/crops/${id}`, editingData, authHeaders(token));
-      setData((prev) => prev.map((c) => (c._id === id ? res.data : c)));
+      // Sirf editable fields bhejo - baaki backend pe waise ke waise rahenge
+      const payload = {
+        cropType: editingData.cropType,
+        fertilizerUsed: editingData.fertilizerUsed,
+        yield: editingData.yield,
+      };
+      const res = await api.put(`/crops/${id}`, payload, authHeaders(token));
+      const updated = res.data.crop ?? res.data;
+      setData((prev) => prev.map((c) => (c._id === id ? updated : c)));
       setEditingId(null);
     } catch (err) {
       console.error("Error updating crop:", err);
@@ -117,103 +105,39 @@ export function HistoricalDataWidget() {
       className="p-4 sm:p-6"
     >
       <Card className="shadow-xl border border-green-200 bg-gradient-to-br from-green-50 to-white">
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <CardTitle className="text-2xl font-semibold text-green-700">
-              🌾 Historical Crop Data
-            </CardTitle>
-            <CardDescription className="text-gray-600">
-              Review and manage your past crop performance with style.
-            </CardDescription>
-          </div>
-          <Button
-            onClick={() => setShowForm((prev) => !prev)}
-            className={`flex items-center gap-2 ${
-              showForm
-                ? "bg-red-500 hover:bg-red-600"
-                : "bg-green-600 hover:bg-green-700"
-            }`}
-          >
-            {showForm ? <XCircle size={18} /> : <PlusCircle size={18} />}
-            {showForm ? "Cancel" : "Add Crop"}
-          </Button>
+        <CardHeader>
+          <CardTitle className="text-2xl font-semibold text-green-700">
+            🌾 Harvest Records
+          </CardTitle>
+          <CardDescription className="text-gray-600">
+            Crops you have already harvested, with their final yield.
+          </CardDescription>
         </CardHeader>
 
         <CardContent>
-          {/* Add Crop Form */}
-          {showForm && (
-            <motion.form
-              onSubmit={handleSubmit}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-            >
-              <Input
-                placeholder="Crop Type"
-                value={formData.cropType}
-                onChange={(e) =>
-                  setFormData({ ...formData, cropType: e.target.value })
-                }
-                required
-              />
-              <Input
-                placeholder="Fertilizer Used"
-                value={formData.fertilizerUsed}
-                onChange={(e) =>
-                  setFormData({ ...formData, fertilizerUsed: e.target.value })
-                }
-                required
-              />
-              <Input
-                type="number"
-                placeholder="Yield (kg/ha)"
-                value={formData.yield || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, yield: Number(e.target.value) })
-                }
-                required
-              />
-              <Input
-                type="date"
-                value={formData.lastFertilizingDate || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    lastFertilizingDate: e.target.value,
-                  })
-                }
-                required
-              />
-              <Input
-                type="date"
-                value={formData.lastPestDate || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, lastPestDate: e.target.value })
-                }
-                required
-              />
-              <Button type="submit" className="bg-green-600 hover:bg-green-700">
-                <Save size={18} className="mr-2" />
-                Save Crop
-              </Button>
-            </motion.form>
-          )}
-
-          {/* Table */}
-          {data.length === 0 ? (
-            <p className="text-center text-gray-500 italic">
-              No crops added yet. Start by adding one 🌱
-            </p>
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-8 text-gray-500">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading…
+            </div>
+          ) : data.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-green-200 p-8 text-center">
+              <p className="font-medium text-gray-700">No harvest records yet</p>
+              <p className="mt-1 text-sm text-gray-500">
+                Add a crop in the Crop Tracker above. Once you mark it harvested,
+                it will appear here with its yield.
+              </p>
+            </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-green-100">
               <Table>
                 <TableHeader className="bg-green-100">
                   <TableRow>
                     <TableHead>Crop</TableHead>
+                    <TableHead>Sown</TableHead>
+                    <TableHead>Harvested</TableHead>
                     <TableHead>Fertilizer</TableHead>
                     <TableHead>Yield (kg/ha)</TableHead>
-                    <TableHead>Last Fertilizing</TableHead>
-                    <TableHead>Last Pest Control</TableHead>
                     <TableHead className="text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -227,21 +151,28 @@ export function HistoricalDataWidget() {
                       className="hover:bg-green-50 transition-colors"
                     >
                       {/* Crop Type */}
-                      <TableCell>
+                      <TableCell className="capitalize">
                         {editingId === crop._id ? (
                           <Input
                             value={editingData.cropType || ""}
                             onChange={(e) =>
-                              setEditingData({
-                                ...editingData,
-                                cropType: e.target.value,
-                              })
+                              setEditingData({ ...editingData, cropType: e.target.value })
                             }
                           />
                         ) : (
-                          crop.cropType
+                          <>
+                            {crop.cropType}
+                            {crop.status === "failed" && (
+                              <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-700">
+                                failed
+                              </span>
+                            )}
+                          </>
                         )}
                       </TableCell>
+
+                      <TableCell>{fmtDate(crop.sowingDate)}</TableCell>
+                      <TableCell>{fmtDate(crop.harvestDate)}</TableCell>
 
                       {/* Fertilizer */}
                       <TableCell>
@@ -256,7 +187,7 @@ export function HistoricalDataWidget() {
                             }
                           />
                         ) : (
-                          crop.fertilizerUsed
+                          crop.fertilizerUsed ?? "—"
                         )}
                       </TableCell>
 
@@ -265,55 +196,16 @@ export function HistoricalDataWidget() {
                         {editingId === crop._id ? (
                           <Input
                             type="number"
-                            value={editingData.yield || ""}
+                            value={editingData.yield ?? ""}
                             onChange={(e) =>
                               setEditingData({
                                 ...editingData,
-                                yield: Number(e.target.value),
+                                yield: e.target.value ? Number(e.target.value) : undefined,
                               })
                             }
                           />
                         ) : (
-                          crop.yield.toLocaleString()
-                        )}
-                      </TableCell>
-
-                      {/* Dates */}
-                      <TableCell>
-                        {editingId === crop._id ? (
-                          <Input
-                            type="date"
-                            value={editingData.lastFertilizingDate || ""}
-                            onChange={(e) =>
-                              setEditingData({
-                                ...editingData,
-                                lastFertilizingDate: e.target.value,
-                              })
-                            }
-                          />
-                        ) : crop.lastFertilizingDate ? (
-                          new Date(crop.lastFertilizingDate).toLocaleDateString()
-                        ) : (
-                          "-"
-                        )}
-                      </TableCell>
-
-                      <TableCell>
-                        {editingId === crop._id ? (
-                          <Input
-                            type="date"
-                            value={editingData.lastPestDate || ""}
-                            onChange={(e) =>
-                              setEditingData({
-                                ...editingData,
-                                lastPestDate: e.target.value,
-                              })
-                            }
-                          />
-                        ) : crop.lastPestDate ? (
-                          new Date(crop.lastPestDate).toLocaleDateString()
-                        ) : (
-                          "-"
+                          crop.yield?.toLocaleString() ?? "—"
                         )}
                       </TableCell>
 

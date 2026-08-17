@@ -23,6 +23,7 @@ import croproute from "./routes/croproute.js"
 import adminRoutes from "./routes/adminRoutes.js";
 import notificationroute from "./routes/notificationroutes.js";
 import notificationallroute from './routes/notificationall.js';
+import cronroute from "./routes/cronroute.js";
 
 import dns from "node:dns";
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
@@ -100,6 +101,7 @@ app.use('/api/crops',croproute);
 app.use("/api/admin", adminRoutes);
 app.use("/api/notifications", notificationroute);
 app.use("/api/notificationsall",  notificationallroute);
+app.use("/api/cron", cronroute);
 //feedback
 
 app.get("/",(req,res)=>{
