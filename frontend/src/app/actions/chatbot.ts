@@ -52,3 +52,13 @@ export async function sendMessage(
     audio,
   };
 }
+
+export async function getAudioForText(text: string, voice: string) {
+  try {
+    const r = await textToSpeech({ text, voice });
+    return { audio: r?.audio ?? null };
+  } catch (err) {
+    console.warn('[getAudioForText] TTS failed:', err);
+    return { audio: null };
+  }
+}

@@ -50,11 +50,17 @@ function detectVoiceByText(text: string): ChatOutput['voice'] {
   return 'Algenib'; // English
 }
 
-export async function chat(input: ChatInput): Promise<ChatOutput> {
-  return chatFlow(input);
-}
+// ✅ Prep result — ya seedha jawab (weather/no-location), ya generation ke liye prompt
+type PrepResult =
+  | { voice: ChatOutput['voice']; directAnswer: string; prompt?: undefined }
+  | { voice: ChatOutput['voice']; prompt: string; directAnswer?: undefined };
 
-async function chatFlow(input: ChatInput): Promise<ChatOutput> {
+/**
+ * Saara prep yahan hota hai — weather ka direct jawab, ya phir RAG-grounded
+ * prompt bana ke deta hai. LLM call yahan NAHI hota, taaki streaming route
+ * (/api/chat) aur non-streaming chatFlow dono isi function ko reuse kar sakein.
+ */
+export async function prepareChat(input: ChatInput): Promise<PrepResult> {
   const voice = detectVoiceByText(input.message);
 
   const historyText = (input.history || [])
@@ -91,7 +97,7 @@ async function chatFlow(input: ChatInput): Promise<ChatOutput> {
         voice === 'Canopus' ? 'వాతావరణం చెప్పడానికి మీ జిల్లా కావాలి.' :
         voice === 'Spica'   ? 'हवामान सांगण्यासाठी तुमचा जिल्हा हवा आहे.' :
         'I need your district to check the weather. Could you tell me your location?';
-      return { response: askMsg, voice };
+      return { voice, directAnswer: askMsg };
     }
 
     try {
@@ -120,19 +126,17 @@ async function chatFlow(input: ChatInput): Promise<ChatOutput> {
         voice === 'Spica'   ? `तुमच्या शेताचे (${location}) हवामान:` :
         `Current weather at ${location}:`;
 
-      return { response: `${opening} ${weatherText}`, voice };
+      return { voice, directAnswer: `${opening} ${weatherText}` };
     } catch (err) {
       console.error('[chatbot] weather fetch failed:', err);
       return {
-        response: `I'm sorry — I couldn't fetch the weather right now. Please try again in a moment.`,
         voice,
+        directAnswer: `I'm sorry — I couldn't fetch the weather right now. Please try again in a moment.`,
       };
     }
   }
 
   // ─── RAG: KCC records retrieve karo ──────────────────────────
-  // Fail ho to khali array aata hai aur bot bina context ke jawab
-  // de deta hai - retrieval down hone se chat nahi rukni chahiye.
   const docs = await retrieveKcc(input.message, {
     limit: RETRIEVE_COUNT,
     district: p.location || undefined,
@@ -168,9 +172,23 @@ ${historyText}
 User: ${input.message}
 `;
 
+  return { voice, prompt: singlePrompt };
+}
+
+export async function chat(input: ChatInput): Promise<ChatOutput> {
+  return chatFlow(input);
+}
+
+async function chatFlow(input: ChatInput): Promise<ChatOutput> {
+  const prep = await prepareChat(input);
+
+  if (prep.directAnswer) {
+    return { response: prep.directAnswer, voice: prep.voice };
+  }
+
   try {
     const llmResponse = await ai.generate({
-      prompt: singlePrompt,
+      prompt: prep.prompt,
       config: {
         maxOutputTokens: 600,
         temperature: 0.7,
@@ -180,16 +198,16 @@ User: ${input.message}
     if (!llmResponse?.text) {
       return {
         response: "I'm sorry, I couldn't generate a response. Please try again.",
-        voice,
+        voice: prep.voice,
       };
     }
 
-    return { response: llmResponse.text, voice };
+    return { response: llmResponse.text, voice: prep.voice };
   } catch (err) {
     console.error('[chatbot] generate failed:', err);
     return {
       response: "I'm having trouble reaching the AI service right now. Please try again in a moment.",
-      voice,
+      voice: prep.voice,
     };
   }
 }

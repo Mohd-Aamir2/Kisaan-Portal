@@ -7,8 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
-// ⚠️ सुनिश्चित करें कि यह पाथ आपके Server Action फ़ंक्शन तक सही जाता है
-import { sendMessage } from "@/app/actions/chatbot"; 
+import { getAudioForText } from "@/app/actions/chatbot";
 
 // --- UI Imports ---
 import {
@@ -42,6 +41,7 @@ type Message = {
   text: string;
   sender: "user" | "bot";
   audio?: string;
+  voice?: string;
   isSpeaking?: boolean; // 👈 TTS Playback Status
 };
 
@@ -189,6 +189,10 @@ export function Chatbot() {
     setIsLoading(true);
     form.reset();
 
+    const botMessageId = (Date.now() + 1).toString();
+    // Khaali bot message pehle hi daal do — usi ko stream se bharenge
+    setMessages((prev) => [...prev, { id: botMessageId, text: "", sender: "bot" }]);
+
     try {
       const history = messages.map((m) => ({
         // Genkit history format
@@ -196,44 +200,56 @@ export function Chatbot() {
         content: m.text,
       }));
 
-      // 🚀 Server Action को कॉल करें
-      const botResponse = await sendMessage(values.message, history);
+      // 🚀 Streaming API route ko call karo
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: values.message, history }),
+      });
 
-      if (!botResponse.text) {
-          throw new Error("Received empty response from server.");
+      if (!res.ok || !res.body) {
+        throw new Error("Received empty response from server.");
       }
 
-      const botMessageId = (Date.now() + 1).toString();
-      const botMessage: Message = {
-        id: botMessageId,
-        text: botResponse.text,
-        sender: "bot",
-        audio: botResponse.audio,
-        isSpeaking: true, // Audio तुरंत चलने वाला है
-      };
-      
-      // मैसेज को UI में जोड़ें
-      setMessages((prev) => [...prev, botMessage]);
+      const voice = res.headers.get("X-Bot-Voice") || "Algenib";
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
 
-      // 🔊 ऑडियो प्ले करें
-      if (botResponse.audio) {
-          // Playback शुरू करने से पहले थोड़ा इंतज़ार करें ताकि DOM में नया मैसेज आ जाए
-          setTimeout(() => {
-              playBotAudio(botResponse.audio!, botMessageId);
-          }, 50); 
-      } else {
-           // अगर ऑडियो नहीं मिला तो isSpeaking को तुरंत बंद कर दें
-           setMessages((prev) => prev.map(m => m.id === botMessageId ? { ...m, isSpeaking: false } : m));
+      setIsLoading(false); // pehla chunk aate hi "सोच रहा हूँ" hata do
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
+        setMessages((prev) =>
+          prev.map((m) => (m.id === botMessageId ? { ...m, text: fullText } : m))
+        );
       }
+
+      setMessages((prev) =>
+        prev.map((m) => (m.id === botMessageId ? { ...m, voice } : m))
+      );
+
+      // 🔊 Audio background mein banta hai — text ko wait nahi karana padta
+      getAudioForText(fullText, voice).then(({ audio }) => {
+        if (audio) {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === botMessageId ? { ...m, audio } : m))
+          );
+          playBotAudio(audio, botMessageId);
+        }
+      });
 
     } catch (error) {
       console.error("Chat submission error:", error);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "क्षमा करें, सर्वर से कनेक्ट करने में समस्या हुई। कृपया पुनः प्रयास करें।",
-        sender: "bot",
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === botMessageId
+            ? { ...m, text: "क्षमा करें, सर्वर से कनेक्ट करने में समस्या हुई। कृपया पुनः प्रयास करें।" }
+            : m
+        )
+      );
     } finally {
       setIsLoading(false);
     }
