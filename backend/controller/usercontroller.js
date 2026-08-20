@@ -2,24 +2,35 @@ import usermodel from "../model/usermodel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import validator from "validator";
+import { isMobileVerified, clearMobileOtp } from "./otpcontroller.js";
 
 
 
 const loginuser= async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await usermodel.findOne({ email });
+    if (!email || !password) {
+      return res.json({
+        success: false,
+        message: "Please enter both email and password",
+      });
+    }
+
+    // Case-insensitive match — existing users ka stored email chahe kisi bhi case me ho, break nahi hoga
+    const user = await usermodel.findOne({
+      email: { $regex: `^${String(email).trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" },
+    });
     if (!user) {
       return res.json({
         success: false,
-        message: "user dose not exists",
+        message: "No account found with this email address",
       });
     }
     const ismatch = await bcrypt.compare(password, user.password);
     if (!ismatch) {
       return res.json({
         success: false,
-        message: "invalid password",
+        message: "Incorrect password. Please try again.",
       });
     }
     const token = createtoken(user._id);
@@ -67,6 +78,21 @@ const registeruser = async (req, res) => {
       return res.json({ success: false, message: "Please enter a strong password" });
     }
 
+    const mobileExists = await usermodel.findOne({ mobilenumber });
+    if (mobileExists) {
+      return res.json({ success: false, message: "This mobile number is already registered" });
+    }
+
+    // 🔐 Mobile OTP verification gate — register tabhi hoga jab number
+    // /api/user/verify-otp se successfully verify ho chuka ho.
+    const mobileVerified = await isMobileVerified(String(mobilenumber));
+    if (!mobileVerified) {
+      return res.json({
+        success: false,
+        message: "Please verify your mobile number with OTP before registering",
+      });
+    }
+
     const salt = await bcrypt.genSalt(10);
     const hashedpassword = await bcrypt.hash(password, salt);
 
@@ -83,6 +109,9 @@ const registeruser = async (req, res) => {
 
     const user = await newuser.save();
     const token = createtoken(user._id);
+
+    // OTP record ab kaam ka nahi raha, cleanup kar do
+    await clearMobileOtp(String(mobilenumber));
 
     res.json({
       success: true,

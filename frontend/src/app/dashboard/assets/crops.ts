@@ -14,6 +14,7 @@ export interface Crop {
   difficulty: "Easy" | "Medium" | "Hard";
   duration: string;
   steps: CropStep[];
+  videoUrl?: string; // optional YouTube tutorial link for this crop
 }
 
 const crops: Crop[] = [
@@ -23,6 +24,7 @@ const crops: Crop[] = [
     "image": "/images/Gemini_Generated_Image_njbdmnnjbdmnnjbd.png",
     "difficulty": "Medium",
     "duration": "90-120 days",
+    "videoUrl": "https://www.youtube.com/watch?v=-EZdaP1uR18",
     "steps": [
       {
         "title": "Seed Preparation",

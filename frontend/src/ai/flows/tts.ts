@@ -1,91 +1,75 @@
-// File: frontend/src/ai/flows/tts.ts (Updated for ElevenLabs)
-
 'use server';
-/**
- * @fileOverview A text-to-speech (TTS) flow using ElevenLabs API.
- */
 
-// हमें अब Genkit या wav की ज़रूरत नहीं है
 import { z } from 'zod';
-// import wav from 'wav'; 
-// import {ai} from '@/ai/genkit'; 
+// import { GoogleGenerativeAI } from '@google/generative-ai'; // agar na ho: npm i @google/generative-ai
 
-// ⚠️ Step 1 से आपकी असली ElevenLabs Voice IDs यहाँ डालें
-const VOICE_MAP: Record<string, string> = {
-    //'Algenib': 'WWPBfJ0byWbKPMoDxFHB',  // English
-     'Sirius': 'WWPBfJ0byWbKPMoDxFHB',    // Hindi
-    // 'Antares': 'WWPBfJ0byWbKPMoDxFHB',  // Tamil
-    // 'Spica': 'WWPBfJ0byWbKPMoDxFHB',      // Marathi
-    // 'Canopus': 'WWPBfJ0byWbKPMoDxFHB',  // Telugu
-};
-
-// ✅ Input schema
 const TTSInputSchema = z.object({
-    text: z.string().describe('The text to convert to speech.'),
-    voice: z.string().describe('The voice name to use (e.g., Sirius).').optional(),
+  text: z.string(),
+  voice: z.string().optional(),
 });
 export type TTSInput = z.infer<typeof TTSInputSchema>;
 
-// ✅ Output schema (अब हम सीधे Audio Buffer/Base64 नहीं भेजेंगे, बल्कि सिर्फ़ URL)
-// Note: आपके frontend को अब सीधे इस फ़ंक्शन को कॉल करने के बजाय, 
-// यह फ़ंक्शन एक **API Route** (जिसे हमने पहले बनाया था) के पीछे काम करेगा।
-// लेकिन क्योंकि आप इसे Genkit flow की जगह डाल रहे हैं, हम इसे एक simpler output देंगे।
-
-// पुराने Genkit format को बनाए रखने के लिए, हम output को 'data:audio/mp3;base64' format में भेजेंगे
-const TTSOutputSchema = z.object({
-    audio: z
-        .string()
-        .describe(
-            "The generated audio as a data URI. Expected format: 'data:audio/mp3;base64,<encoded_data>'."
-        ),
-});
+const TTSOutputSchema = z.object({ audio: z.string() });
 export type TTSOutput = z.infer<typeof TTSOutputSchema>;
 
-// ✅ Main TTS function
-export async function textToSpeech(input: TTSInput): Promise<TTSOutput> {
-    const elevenLabsVoiceId = VOICE_MAP[input.voice || 'Algenib']; // Default to Algenib
+// Gemini ke prebuilt voices (koi bhi ek try karo — Kore, Puck, Charon, Aoede, Fenrir waise naam hain)
+const VOICE_MAP: Record<string, string> = {
+  Algenib: 'Puck',
+  Sirius: 'Kore',
+  Antares: 'Aoede',
+  Spica: 'Charon',
+  Canopus: 'Fenrir',
+};
 
-    if (!process.env.ELEVENLABS_API_KEY || !elevenLabsVoiceId) {
-        throw new Error('ElevenLabs API Key or Voice ID is missing in environment or VOICE_MAP.');
-    }
-
-    try {
-        const response = await fetch(
-            `https://api.elevenlabs.io/v1/text-to-speech/${elevenLabsVoiceId}`,
-            {
-                method: 'POST',
-                headers: {
-                    'xi-api-key': process.env.ELEVENLABS_API_KEY,
-                    'Content-Type': 'application/json',
-                    'Accept': 'audio/mpeg', // MP3 फॉर्मेट के लिए
-                },
-                body: JSON.stringify({
-                    text: input.text,
-                    model_id: "eleven_multilingual_v2", 
-                }),
-            }
-        );
-
-        if (!response.ok || response.headers.get('Content-Type') !== 'audio/mpeg') {
-            const errorText = await response.text();
-            console.error("ElevenLabs TTS Error:", errorText);
-            throw new Error(`TTS generation failed: ${response.status} - ${errorText.substring(0, 100)}...`);
-        }
-        
-        // Audio Buffer को Base64 में बदलें
-        const audioBuffer = Buffer.from(await response.arrayBuffer());
-        const base64Audio = audioBuffer.toString('base64');
-        
-        return {
-            audio: `data:audio/mp3;base64,${base64Audio}`,
-        };
-
-    } catch (error) {
-        console.error('Error calling ElevenLabs TTS API:', error);
-        throw new Error('Failed to generate speech using ElevenLabs.');
-    }
+function pcmToWav(pcmBase64: string, sampleRate = 24000): string {
+  const pcm = Buffer.from(pcmBase64, 'base64');
+  const header = Buffer.alloc(44);
+  header.write('RIFF', 0);
+  header.writeUInt32LE(36 + pcm.length, 4);
+  header.write('WAVE', 8);
+  header.write('fmt ', 12);
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20);
+  header.writeUInt16LE(1, 22);
+  header.writeUInt32LE(sampleRate, 24);
+  header.writeUInt32LE(sampleRate * 2, 28);
+  header.writeUInt16LE(2, 32);
+  header.writeUInt16LE(16, 34);
+  header.write('data', 36);
+  header.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([header, pcm]).toString('base64');
 }
 
-// **Note:** क्योंकि हमने Genkit flow हटा दिया है, 
-// अब आपका frontend इस फ़ंक्शन को सीधे नहीं कॉल कर पाएगा (अगर यह 'use server' के बाहर है)। 
-// आपको यह सुनिश्चित करना होगा कि आपका `chat.ts` फ़ंक्शन TTS के लिए इस `textToSpeech` फ़ंक्शन का उपयोग करता है।
+export async function textToSpeech(input: TTSInput): Promise<TTSOutput> {
+  const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!key) throw new Error('GEMINI_API_KEY missing');
+
+  const voiceName = VOICE_MAP[input.voice || 'Algenib'] || 'Puck';
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${key}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: input.text }] }],
+        generationConfig: {
+          responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: { prebuiltVoiceConfig: { voiceName } },
+          },
+        },
+      }),
+    }
+  );
+
+  if (!res.ok) throw new Error(`Gemini TTS failed: ${res.status} ${await res.text()}`);
+
+  const json = await res.json();
+  const part = json?.candidates?.[0]?.content?.parts?.[0];
+  const pcmBase64 = part?.inlineData?.data;
+  if (!pcmBase64) throw new Error('Gemini TTS: no audio returned');
+
+  const wavBase64 = pcmToWav(pcmBase64);
+  return { audio: `data:audio/wav;base64,${wavBase64}` };
+}

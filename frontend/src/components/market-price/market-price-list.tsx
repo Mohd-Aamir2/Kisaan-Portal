@@ -16,23 +16,24 @@ interface Crop {
 }
 
 const fallbackCrops: Crop[] = [
-  { state: "Maharashtra", district: "Pune", market: "Pune", commodity: "Wheat", variety: "Sharbati", grade: "A", arrival_date: "2025-01-01", min_price: "2000", max_price: "2500", modal_price: "2300" },
-  { state: "Uttar Pradesh", district: "Kanpur", market: "Kanpur", commodity: "Rice", variety: "Basmati", grade: "A", arrival_date: "2025-01-01", min_price: "3000", max_price: "3500", modal_price: "3200" },
-  { state: "Punjab", district: "Ludhiana", market: "Ludhiana", commodity: "Maize", variety: "Local", grade: "B", arrival_date: "2025-01-02", min_price: "1800", max_price: "2200", modal_price: "2000" },
+  { state: "Maharashtra", district: "Pune", market: "Pune", commodity: "Wheat", variety: "Sharbati", grade: "A", arrival_date: "2026-08-01", min_price: "2000", max_price: "2500", modal_price: "2300" },
+  { state: "Uttar Pradesh", district: "Kanpur", market: "Kanpur", commodity: "Rice", variety: "Basmati", grade: "A", arrival_date: "2026-08-11", min_price: "3000", max_price: "3500", modal_price: "3200" },
+  { state: "Punjab", district: "Ludhiana", market: "Ludhiana", commodity: "Maize", variety: "Local", grade: "B", arrival_date: "2026-08-12", min_price: "1800", max_price: "2200", modal_price: "2000" },
   { state: "Madhya Pradesh", district: "Indore", market: "Indore", commodity: "Soybean", variety: "Yellow", grade: "A", arrival_date: "2025-01-02", min_price: "3500", max_price: "4000", modal_price: "3750" },
-  { state: "Gujarat", district: "Ahmedabad", market: "Ahmedabad", commodity: "Cotton", variety: "BT Cotton", grade: "A", arrival_date: "2025-01-03", min_price: "6000", max_price: "6500", modal_price: "6200" },
-  { state: "Rajasthan", district: "Jaipur", market: "Jaipur", commodity: "Bajra", variety: "Local", grade: "B", arrival_date: "2025-01-03", min_price: "1600", max_price: "2000", modal_price: "1800" },
-  { state: "Bihar", district: "Patna", market: "Patna", commodity: "Potato", variety: "Local", grade: "A", arrival_date: "2025-01-04", min_price: "800", max_price: "1000", modal_price: "900" },
-  { state: "Haryana", district: "Karnal", market: "Karnal", commodity: "Mustard", variety: "Yellow", grade: "A", arrival_date: "2025-01-04", min_price: "4500", max_price: "4800", modal_price: "4600" },
-  { state: "Tamil Nadu", district: "Chennai", market: "Chennai", commodity: "Tomato", variety: "Hybrid", grade: "A", arrival_date: "2025-01-05", min_price: "1200", max_price: "1500", modal_price: "1300" },
-  { state: "Karnataka", district: "Bangalore", market: "Yeshwanthpur", commodity: "Onion", variety: "Red", grade: "B", arrival_date: "2025-01-05", min_price: "900", max_price: "1200", modal_price: "1050" },
-  { state: "West Bengal", district: "Kolkata", market: "Kolkata", commodity: "Jute", variety: "Tossa", grade: "A", arrival_date: "2025-01-06", min_price: "5000", max_price: "5500", modal_price: "5250" },
-  { state: "Odisha", district: "Cuttack", market: "Cuttack", commodity: "Groundnut", variety: "Bold", grade: "A", arrival_date: "2025-01-06", min_price: "4000", max_price: "4500", modal_price: "4200" },
-  { state: "Telangana", district: "Hyderabad", market: "Hyderabad", commodity: "Chilli", variety: "Teja", grade: "A", arrival_date: "2025-01-07", min_price: "8000", max_price: "9000", modal_price: "8500" },
-  { state: "Andhra Pradesh", district: "Guntur", market: "Guntur", commodity: "Turmeric", variety: "Salem", grade: "A", arrival_date: "2025-01-07", min_price: "6500", max_price: "7000", modal_price: "6800" },
-  { state: "Kerala", district: "Ernakulam", market: "Ernakulam", commodity: "Coconut", variety: "Hybrid", grade: "A", arrival_date: "2025-01-08", min_price: "9000", max_price: "9500", modal_price: "9200" },
-  { state: "Assam", district: "Guwahati", market: "Guwahati", commodity: "Tea Leaves", variety: "Assam Tea", grade: "A", arrival_date: "2025-01-08", min_price: "18000", max_price: "20000", modal_price: "19000" }
+  { state: "Gujarat", district: "Ahmedabad", market: "Ahmedabad", commodity: "Cotton", variety: "BT Cotton", grade: "A", arrival_date: "2026-08-13", min_price: "6000", max_price: "6500", modal_price: "6200" },
+  { state: "Rajasthan", district: "Jaipur", market: "Jaipur", commodity: "Bajra", variety: "Local", grade: "B", arrival_date: "2026-08-15", min_price: "1600", max_price: "2000", modal_price: "1800" },
+  { state: "Bihar", district: "Patna", market: "Patna", commodity: "Potato", variety: "Local", grade: "A", arrival_date: "2026-08-14", min_price: "800", max_price: "1000", modal_price: "900" },
+  { state: "Haryana", district: "Karnal", market: "Karnal", commodity: "Mustard", variety: "Yellow", grade: "A", arrival_date: "2026-08-18", min_price: "4500", max_price: "4800", modal_price: "4600" },
+  { state: "Tamil Nadu", district: "Chennai", market: "Chennai", commodity: "Tomato", variety: "Hybrid", grade: "A", arrival_date: "2026-08-05", min_price: "1200", max_price: "1500", modal_price: "1300" },
+  { state: "Karnataka", district: "Bangalore", market: "Yeshwanthpur", commodity: "Onion", variety: "Red", grade: "B", arrival_date: "2026-08-05", min_price: "900", max_price: "1200", modal_price: "1050" },
+  { state: "West Bengal", district: "Kolkata", market: "Kolkata", commodity: "Jute", variety: "Tossa", grade: "A", arrival_date: "2026-08-06", min_price: "5000", max_price: "5500", modal_price: "5250" },
+  { state: "Odisha", district: "Cuttack", market: "Cuttack", commodity: "Groundnut", variety: "Bold", grade: "A", arrival_date: "2026-08-06", min_price: "4000", max_price: "4500", modal_price: "4200" },
+  { state: "Telangana", district: "Hyderabad", market: "Hyderabad", commodity: "Chilli", variety: "Teja", grade: "A", arrival_date: "2026-08-07", min_price: "8000", max_price: "9000", modal_price: "8500" },
+  { state: "Andhra Pradesh", district: "Guntur", market: "Guntur", commodity: "Turmeric", variety: "Salem", grade: "A", arrival_date: "2026-08-07", min_price: "6500", max_price: "7000", modal_price: "6800" },
+  { state: "Kerala", district: "Ernakulam", market: "Ernakulam", commodity: "Coconut", variety: "Hybrid", grade: "A", arrival_date: "2026-08-08", min_price: "9000", max_price: "9500", modal_price: "9200" },
+  { state: "Assam", district: "Guwahati", market: "Guwahati", commodity: "Tea Leaves", variety: "Assam Tea", grade: "A", arrival_date: "2026-08-08", min_price: "18000", max_price: "20000", modal_price: "19000" }
 ];
+
 
 const MarketPrice: React.FC = () => {
   const context = useContext(AppContext);
@@ -43,6 +44,10 @@ const MarketPrice: React.FC = () => {
   const [search, setSearch] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [loading, setLoading] = useState(false);
+  // isFallback + fallbackReason isliye taaki ye pata chale ki dummy data
+  // kyun dikh raha hai, na ki silently dummy data dikh jaaye
+  const [isFallback, setIsFallback] = useState(false);
+  const [fallbackReason, setFallbackReason] = useState<string | null>(null);
 
   // change backendUrl to your actual backend origin if needed
   const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:4000";
@@ -51,6 +56,8 @@ const MarketPrice: React.FC = () => {
     if (!district) {
       // If no district selected, show fallback
       setCrops(fallbackCrops);
+      setIsFallback(true);
+      setFallbackReason("Profile me district set nahi hai");
       return;
     }
 
@@ -59,14 +66,23 @@ const MarketPrice: React.FC = () => {
     const fetchPrices = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${backendUrl}/api/marketprices/${encodeURIComponent(district)}`, {
+        const res = await fetch(`${backendUrl}/api/marketprices/${encodeURIComponent(district.trim())}`, {
           headers: { "Accept": "application/json" }
         });
 
         if (!res.ok) {
-          // non-2xx status
-          console.warn("market prices fetch returned non-ok:", res.status);
-          if (!cancelled) setCrops(fallbackCrops);
+          // non-2xx status — backend ne kyun fail kiya, uska reason bhi try karo
+          let reason = `Backend error (status ${res.status})`;
+          try {
+            const errBody = await res.json();
+            if (errBody?.message) reason = errBody.message;
+          } catch {}
+          console.warn("market prices fetch returned non-ok:", res.status, reason);
+          if (!cancelled) {
+            setCrops(fallbackCrops);
+            setIsFallback(true);
+            setFallbackReason(reason);
+          }
           return;
         }
 
@@ -81,14 +97,36 @@ const MarketPrice: React.FC = () => {
             : [];
 
         if (!records.length) {
-          // API returned empty list — use fallback
-          if (!cancelled) setCrops(fallbackCrops);
+          // API returned empty list AND koi cache bhi nahi tha — ab
+          // hardcoded sample data hi dikhega
+          if (!cancelled) {
+            setCrops(fallbackCrops);
+            setIsFallback(true);
+            setFallbackReason(`"${district}" ke liye aaj koi live mandi record nahi mila`);
+          }
+        } else if (data.stale) {
+          // Backend ne purana (cached) real data bheja hai — dummy nahi,
+          // par aaj ka bhi nahi. User ko clearly batao kitna purana hai.
+          if (!cancelled) {
+            setCrops(records);
+            setIsFallback(true);
+            const ageText = data.ageDays === 0 ? "aaj se pehle" : `${data.ageDays} din purana`;
+            setFallbackReason(`Live price nahi mili, ${ageText} data dikhaya ja raha hai`);
+          }
         } else {
-          if (!cancelled) setCrops(records);
+          if (!cancelled) {
+            setCrops(records);
+            setIsFallback(false);
+            setFallbackReason(null);
+          }
         }
       } catch (err) {
         console.error("Error fetching market prices", err);
-        if (!cancelled) setCrops(fallbackCrops);
+        if (!cancelled) {
+          setCrops(fallbackCrops);
+          setIsFallback(true);
+          setFallbackReason("Backend se connect nahi ho paaya (network/CORS error)");
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -100,7 +138,7 @@ const MarketPrice: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [district]); // only run when district changes
+  }, [district, backendUrl]); // only run when district changes
 
   // Filter + Sort safely parsing modal_price to number
   const filteredCrops = crops
@@ -132,6 +170,12 @@ const MarketPrice: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {isFallback && (
+        <div className="mb-4 rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-2 text-sm text-yellow-800">
+          ⚠️ {fallbackReason || "Live mandi prices abhi load nahi ho paayi — sample data dikhaya ja raha hai."}
+        </div>
+      )}
 
       {/* Search + Sort */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">

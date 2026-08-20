@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useRef } from 'react';
 import { useRouter } from "next/navigation";
-import { Sprout, User, Phone, MapPin, Map, Layers, Mail, Lock, Eye, EyeOff, X } from 'lucide-react';
+import { Sprout, User, Phone, MapPin, Map, Layers, Mail, Lock, Eye, EyeOff, X, ShieldCheck } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { AppContext } from "../context/appcontext";
 import { LanguageSelector } from "@/components/language-selector";
+
+const OTP_LENGTH = 6;
+const RESEND_COOLDOWN_SECONDS = 30;
 
 const Login: React.FC = () => {
   const context = useContext(AppContext);
@@ -34,6 +37,43 @@ const Login: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // 🔹 Mobile OTP verification state (signup only)
+  const [mobileVerified, setMobileVerified] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpValue, setOtpValue] = useState('');
+  const [otpSending, setOtpSending] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+    };
+  }, []);
+
+  const startResendCooldown = () => {
+    setResendCooldown(RESEND_COOLDOWN_SECONDS);
+    if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+    cooldownTimerRef.current = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const resetMobileVerification = () => {
+    setMobileVerified(false);
+    setOtpSent(false);
+    setOtpValue('');
+    setResendCooldown(0);
+    if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+  };
 
   // 🔹 Backend URL
   const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:4000";
@@ -83,12 +123,18 @@ const Login: React.FC = () => {
       return { ...prev, [name]: value };
     });
 
+    // 🔹 Mobile number change ho to purani OTP verification invalid kar do
+    if (name === 'mobilenumber') {
+      resetMobileVerification();
+    }
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const mobileRegex = /^[6-9]\d{9}$/;
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -103,8 +149,8 @@ const Login: React.FC = () => {
     // 🔹 Password validation
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (!isLogin && formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    } else if (!isLogin && formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
     }
 
     if (!isLogin) {
@@ -114,8 +160,10 @@ const Login: React.FC = () => {
 
       if (!formData.mobilenumber.trim()) {
         newErrors.mobile = 'Mobile number is required';
-      } else if (!/^[6-9]\d{9}$/.test(formData.mobilenumber)) {
+      } else if (!mobileRegex.test(formData.mobilenumber)) {
         newErrors.mobile = 'Please enter a valid 10-digit mobile number';
+      } else if (!mobileVerified) {
+        newErrors.mobile = 'Please verify your mobile number with OTP';
       }
 
       if (!formData.state) {
@@ -140,14 +188,16 @@ const Login: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // 🔹 Backend ka error message sahi field ke saath map karo
+  // 🔹 Backend ka error message sahi field ke saath map karo — isse login/register
+  // dono me galti clearly us input ke neeche dikhti hai, sirf ek generic toast nahi.
   const applyBackendError = (message: string) => {
     const msg = (message || '').toLowerCase();
 
-    if (msg.includes('password') || msg.includes('incorrect') || msg.includes('invalid credential')) {
+    if (msg.includes('password')) {
       setErrors(prev => ({ ...prev, password: message }));
     } else if (
       msg.includes('email') ||
+      msg.includes('account') ||
       msg.includes('user not found') ||
       msg.includes('not registered') ||
       msg.includes('already exists') ||
@@ -155,12 +205,82 @@ const Login: React.FC = () => {
       msg.includes('does not exist')
     ) {
       setErrors(prev => ({ ...prev, email: message }));
+    } else if (msg.includes('mobile') || msg.includes('otp')) {
+      setErrors(prev => ({ ...prev, mobile: message }));
+    } else {
+      // fallback — generic error jo form ke top pe dikhega
+      setErrors(prev => ({ ...prev, form: message }));
+    }
+  };
+
+  const handleSendOtp = async () => {
+    if (!mobileRegex.test(formData.mobilenumber)) {
+      setErrors(prev => ({ ...prev, mobile: 'Please enter a valid 10-digit mobile number first' }));
+      return;
+    }
+    setOtpSending(true);
+    setErrors(prev => ({ ...prev, mobile: '' }));
+    try {
+      const response = await axios.post(backendUrl + '/api/user/send-otp', {
+        mobilenumber: formData.mobilenumber,
+      });
+      if (response.data.success) {
+        setOtpSent(true);
+        setOtpValue('');
+        startResendCooldown();
+        toast.success(response.data.message || 'OTP sent to your mobile number');
+        // 🔹 Dev/testing convenience — jab tak real SMS gateway configure nahi hota,
+        // backend OTP ko response me bhi bhejta hai taaki bina SMS ke test ho sake.
+        if (response.data.devOtp) {
+          toast.info(`Testing mode (no SMS gateway connected) — OTP: ${response.data.devOtp}`, {
+            autoClose: 15000,
+          });
+        }
+      } else {
+        toast.error(response.data.message || 'Could not send OTP');
+        setErrors(prev => ({ ...prev, mobile: response.data.message }));
+      }
+    } catch (err: any) {
+      const message = err.response?.data?.message || err.message || 'Could not send OTP';
+      toast.error(message);
+      setErrors(prev => ({ ...prev, mobile: message }));
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otpValue.trim().length !== OTP_LENGTH) {
+      setErrors(prev => ({ ...prev, otp: `Please enter the ${OTP_LENGTH}-digit OTP` }));
+      return;
+    }
+    setOtpVerifying(true);
+    setErrors(prev => ({ ...prev, otp: '' }));
+    try {
+      const response = await axios.post(backendUrl + '/api/user/verify-otp', {
+        mobilenumber: formData.mobilenumber,
+        otp: otpValue.trim(),
+      });
+      if (response.data.success) {
+        setMobileVerified(true);
+        toast.success(response.data.message || 'Mobile number verified');
+      } else {
+        toast.error(response.data.message || 'Incorrect OTP');
+        setErrors(prev => ({ ...prev, otp: response.data.message }));
+      }
+    } catch (err: any) {
+      const message = err.response?.data?.message || err.message || 'Could not verify OTP';
+      toast.error(message);
+      setErrors(prev => ({ ...prev, otp: message }));
+    } finally {
+      setOtpVerifying(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    setErrors(prev => ({ ...prev, form: '' }));
     if (!validateForm()) return;
 
     setLoading(true);
@@ -273,6 +393,13 @@ const Login: React.FC = () => {
             </p>
           </div>
 
+          {/* 🔹 Generic/top-level error banner — jab error kisi specific field se map na ho */}
+          {errors.form && (
+            <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+              {errors.form}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>
@@ -347,25 +474,77 @@ const Login: React.FC = () => {
                   {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
                 </div>
 
-                {/* Mobile Number */}
+                {/* Mobile Number + OTP verification */}
                 <div>
                   <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 mb-2">Mobile Number</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Phone className="h-5 w-5 text-gray-400" />
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Phone className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="tel"
+                        id="mobilenumber"
+                        name="mobilenumber"
+                        value={formData.mobilenumber}
+                        onChange={handleInputChange}
+                        disabled={mobileVerified}
+                        className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors disabled:bg-gray-100 ${errors.mobile ? 'border-red-300' : 'border-gray-300'}`}
+                        placeholder="Enter 10-digit mobile number"
+                        maxLength={10}
+                      />
                     </div>
-                    <input
-                      type="tel"
-                      id="mobilenumber"
-                      name="mobilenumber"
-                      value={formData.mobilenumber}
-                      onChange={handleInputChange}
-                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${errors.mobile ? 'border-red-300' : 'border-gray-300'}`}
-                      placeholder="Enter 10-digit mobile number"
-                      maxLength={10}
-                    />
+                    {!mobileVerified && (
+                      <button
+                        type="button"
+                        onClick={handleSendOtp}
+                        disabled={otpSending || resendCooldown > 0 || !mobileRegex.test(formData.mobilenumber)}
+                        className="shrink-0 px-4 py-3 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {otpSending
+                          ? 'Sending...'
+                          : resendCooldown > 0
+                          ? `Resend (${resendCooldown}s)`
+                          : otpSent
+                          ? 'Resend OTP'
+                          : 'Send OTP'}
+                      </button>
+                    )}
                   </div>
                   {errors.mobile && <p className="mt-1 text-sm text-red-600">{errors.mobile}</p>}
+
+                  {mobileVerified ? (
+                    <p className="mt-2 flex items-center gap-1 text-sm text-green-700 font-medium">
+                      <ShieldCheck className="h-4 w-4" /> Mobile number verified
+                    </p>
+                  ) : otpSent ? (
+                    <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                      <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
+                        Enter OTP sent to {formData.mobilenumber}
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          id="otp"
+                          inputMode="numeric"
+                          maxLength={OTP_LENGTH}
+                          value={otpValue}
+                          onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ''))}
+                          className={`block flex-1 px-3 py-2 border rounded-lg tracking-widest text-center focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors ${errors.otp ? 'border-red-300' : 'border-gray-300'}`}
+                          placeholder="6-digit OTP"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleVerifyOtp}
+                          disabled={otpVerifying || otpValue.length !== OTP_LENGTH}
+                          className="shrink-0 px-4 py-2 rounded-lg text-sm font-medium bg-gray-800 text-white hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {otpVerifying ? 'Verifying...' : 'Verify'}
+                        </button>
+                      </div>
+                      {errors.otp && <p className="mt-1 text-sm text-red-600">{errors.otp}</p>}
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* State — ab list fetch se aati hai */}

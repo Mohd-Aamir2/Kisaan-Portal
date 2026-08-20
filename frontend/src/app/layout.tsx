@@ -5,6 +5,8 @@ import AppProvider from "./context/appcontext";
 import { Toaster } from "@/components/ui/toaster";
 import SafeWrapper from "@/components/SafeWrapper";
 import Footer from "@/components/footer/Footer";  // 👈 import footer
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export const metadata: Metadata = {
   title: "Kisaan",
@@ -38,8 +40,10 @@ export default function RootLayout({
           </AppProvider>
         </SafeWrapper>
         <Toaster />
+        {/* 👈 login/register jaise pages react-toastify ka toast() use karte hain,
+            usko screen pe render karne ke liye ye container zaroori hai */}
+        <ToastContainer position="top-right" autoClose={5000} newestOnTop />
       </body>
     </html>
   );
 }
-

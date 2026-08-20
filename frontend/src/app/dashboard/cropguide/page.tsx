@@ -10,13 +10,35 @@ import {
   Scissors,
   PlayCircle,
   MessageCircle,
+  X,
 } from "lucide-react";
 import crops from "../assets/crops";
+import type { Crop } from "../assets/crops";
 import { motion, AnimatePresence } from "framer-motion";
+
+// Converts a normal YouTube watch/share URL into an embeddable player URL.
+function getYoutubeEmbedUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    let videoId = "";
+    if (parsed.hostname.includes("youtu.be")) {
+      videoId = parsed.pathname.slice(1);
+    } else if (parsed.searchParams.get("v")) {
+      videoId = parsed.searchParams.get("v") as string;
+    } else if (parsed.pathname.includes("/embed/")) {
+      return url;
+    }
+    if (!videoId) return null;
+    return `https://www.youtube.com/embed/${videoId}`;
+  } catch {
+    return null;
+  }
+}
 
 const CropFarmingGuide: React.FC = () => {
   const [expandedCards, setExpandedCards] = useState<number[]>([]);
   const [search, setSearch] = useState("");
+  const [activeVideoCrop, setActiveVideoCrop] = useState<Crop | null>(null);
 
   const toggleCard = (id: number) => {
     setExpandedCards((prev) =>
@@ -214,7 +236,10 @@ const CropFarmingGuide: React.FC = () => {
                       📚 Additional Resources
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <button className="flex items-center gap-3 p-3 bg-white rounded-lg border border-green-100 hover:shadow-md transition">
+                      <button
+                        onClick={() => setActiveVideoCrop(crop)}
+                        className="flex items-center gap-3 p-3 bg-white rounded-lg border border-green-100 hover:shadow-md transition"
+                      >
                         <PlayCircle className="text-green-600" />
                         <div className="text-left">
                           <h5 className="font-medium text-gray-800">
@@ -275,6 +300,76 @@ const CropFarmingGuide: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* Video Tutorial Modal */}
+      <AnimatePresence>
+        {activeVideoCrop && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+            onClick={() => setActiveVideoCrop(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                <h4 className="font-semibold text-green-700">
+                  {activeVideoCrop.name} — Video Tutorial
+                </h4>
+                <button
+                  onClick={() => setActiveVideoCrop(null)}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 transition"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+
+              <div className="p-4">
+                {activeVideoCrop.videoUrl &&
+                getYoutubeEmbedUrl(activeVideoCrop.videoUrl) ? (
+                  <div className="aspect-video w-full rounded-xl overflow-hidden bg-black">
+                    <iframe
+                      src={getYoutubeEmbedUrl(activeVideoCrop.videoUrl)!}
+                      title={`${activeVideoCrop.name} farming video tutorial`}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                ) : (
+                  <div className="text-center py-10">
+                    <PlayCircle className="w-10 h-10 text-green-400 mx-auto mb-3" />
+                    <p className="text-gray-600 mb-4">
+                      No video tutorial has been added for{" "}
+                      <span className="font-medium">
+                        {activeVideoCrop.name}
+                      </span>{" "}
+                      yet.
+                    </p>
+                    <a
+                      href={`https://www.youtube.com/results?search_query=${encodeURIComponent(
+                        activeVideoCrop.name + " farming guide"
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition"
+                    >
+                      Search on YouTube
+                    </a>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

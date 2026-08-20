@@ -1,24 +1,31 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-// API key load karo (dotenv use karo to .env se)
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+import { generateWithRotation } from "../utils/geminiClient.js";
 
 export const askQuestion = async (req, res) => {
   try {
     const { question } = req.body;
 
-    // Model select karo (gemini-1.5-flash ya gemini-1.5-pro)
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    if (!question || !question.trim()) {
+      return res.status(400).json({ success: false, error: "question required" });
+    }
 
-    // Response lo
-    const result = await model.generateContent(question);
+    // Ab ye internally saari GEMINI_API_KEYS try karta hai — ek key ki
+    // quota khatam ho to automatically agli key pe switch ho jata hai.
+    const answer = await generateWithRotation(question);
 
     res.json({
       success: true,
-      answer: result.response.text(),
+      answer,
     });
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    console.error("Gemini API Error:", error.message);
+
+    if (error.allKeysExhausted) {
+      return res.status(503).json({
+        success: false,
+        error: "AI service temporarily busy hai (saari keys ki limit khatam). Thodi der baad try karo.",
+      });
+    }
+
     res.status(500).json({ success: false, error: error.message });
   }
 };
