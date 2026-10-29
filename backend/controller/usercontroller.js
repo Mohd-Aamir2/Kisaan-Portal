@@ -2,11 +2,8 @@ import usermodel from "../model/usermodel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import validator from "validator";
-import { isMobileVerified, clearMobileOtp } from "./otpcontroller.js";
 
-
-
-const loginuser= async (req, res) => {
+const loginuser = async (req, res) => {
   const { email, password } = req.body;
   try {
     if (!email || !password) {
@@ -37,10 +34,16 @@ const loginuser= async (req, res) => {
     res.json({
       success: true,
       token,
-      userId: user._id, 
-      name:user.name,email:user.email,mobilenumber:user.mobilenumber,state:user.state,district:user.district,soiltype:user.soiltype,farmSize: user.farmSize,
+      userId: user._id,
+      name: user.name,
+      email: user.email,
+      mobilenumber: user.mobilenumber,
+      state: user.state,
+      district: user.district,
+      soiltype: user.soiltype,
+      farmSize: user.farmSize,
     });
-    user.lastActive = new Date();   // 👈 update last active
+    user.lastActive = new Date(); // 👈 update last active
     await user.save();
   } catch (err) {
     console.log(err);
@@ -56,13 +59,12 @@ const createtoken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET);
 };
 
-
 //register user
 const registeruser = async (req, res) => {
   const { email, password, name, mobilenumber, state, district, soiltype, farmSize } = req.body;
   try {
-    if(!name || !email || !password || !mobilenumber || !state || !district || !soiltype){
-        return res.json({ success:false, message:"missing details" });
+    if (!name || !email || !password || !mobilenumber || !state || !district || !soiltype) {
+      return res.json({ success: false, message: "missing details" });
     }
 
     const exists = await usermodel.findOne({ email });
@@ -83,16 +85,6 @@ const registeruser = async (req, res) => {
       return res.json({ success: false, message: "This mobile number is already registered" });
     }
 
-    // 🔐 Mobile OTP verification gate — register tabhi hoga jab number
-    // /api/user/verify-otp se successfully verify ho chuka ho.
-    const mobileVerified = await isMobileVerified(String(mobilenumber));
-    if (!mobileVerified) {
-      return res.json({
-        success: false,
-        message: "Please verify your mobile number with OTP before registering",
-      });
-    }
-
     const salt = await bcrypt.genSalt(10);
     const hashedpassword = await bcrypt.hash(password, salt);
 
@@ -104,26 +96,23 @@ const registeruser = async (req, res) => {
       state,
       district,
       soiltype,
-      farmSize, // ✅ added farmSize
+      farmSize,
     });
 
     const user = await newuser.save();
     const token = createtoken(user._id);
 
-    // OTP record ab kaam ka nahi raha, cleanup kar do
-    await clearMobileOtp(String(mobilenumber));
-
     res.json({
       success: true,
       token,
-      userId: user._id, 
+      userId: user._id,
       name: user.name,
       email: user.email,
       mobilenumber: user.mobilenumber,
       state: user.state,
       district: user.district,
       soiltype: user.soiltype,
-      farmSize: user.farmSize, // ✅ return farmSize
+      farmSize: user.farmSize,
     });
   } catch (err) {
     console.log(err);
@@ -133,7 +122,7 @@ const registeruser = async (req, res) => {
 
 const getUsers = async (req, res) => {
   try {
-    const users = await usermodel.find().select('-password'); // exclude password
+    const users = await usermodel.find().select("-password"); // exclude password
     res.json({
       success: true,
       users,
@@ -184,4 +173,4 @@ const updateUser = async (req, res) => {
   }
 };
 
-export { loginuser, registeruser,getUsers,deleteUser,updateUser };
+export { loginuser, registeruser, getUsers, deleteUser, updateUser };
